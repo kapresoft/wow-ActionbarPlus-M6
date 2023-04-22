@@ -1,0 +1,36 @@
+## Interface: 100007
+## Version: @project-version@
+## Title: Actionbar|cff1784d1Plus|r-M6 Retail
+## Notes: This add-on enables |cff1784d1M6|r for Actionbar|cff1784d1Plus|r
+## Author: kapresoft@gmail.com
+## SavedVariables: ABP_PLUS_M6_DB
+
+# See: https://wowpedia.fandom.com/wiki/TOC_format
+## RequiredDeps: ActionbarPlus, M6
+## LoadWith: ActionbarPlus, M6
+## DefaultState: enabled
+
+## X-LoadOn-Always: delayed
+## X-Credits: kapresoft@gmail.com
+## X-Category: ActionBars
+## X-License: All Rights Reserved: You are free to fork and modify on GitHub, please ask us about anything else.
+
+## X-Github-Repo: https://github.com/kapresoft/wowaddon-actionbar-plus
+## X-Github-Issues: https://github.com/kapresoft/wowaddon-actionbar-plus/issues
+## X-CurseForge: https://www.curseforge.com/wow/addons/actionbarplus
+## X-Curse-Project-ID: TBD
+## X-Github-Project-Author: @project-author@
+## X-Github-Project-Hash: @project-hash@
+## X-Github-Project-Last-Changed-Date: @project-date-iso@
+## X-Github-Project-Version: @project-version@
+
+## X-WoWI-ID: TBD
+
+## X-PayPal-Donation-ID: AX58YP3GSGXVU
+## X-PayPal-Donation-URL: https://www.paypal.com/donate/?hosted_button_id=AX58YP3GSGXVU
+
+# To get the Interface/Build Info
+# /dump select(4, GetBuildInfo())
+
+Core\_Core.xml
+Retail\_ActionbarPlus-M6.xml
