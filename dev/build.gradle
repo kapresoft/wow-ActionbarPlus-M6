@@ -1,0 +1,114 @@
+// Usage:
+// cd dev
+// ./gradlew classic retail classic_era
+//
+// ========================================================================
+//file:noinspection GroovyUnusedAssignment
+
+plugins {
+	id 'java'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+String addOnName = "ActionbarPlus-M6"
+String projectDir = '../'
+String classicHome = System.getenv('WOW_CLASSIC_HOME')
+String retailHome = System.getenv('WOW_RETAIL_HOME')
+String classicEraHome = System.getenv('WOW_CLASSIC_ERA_HOME')
+String classicAddonDir = "${classicHome}/Interface/Addons/${addOnName}"
+String retailAddonDir = "${retailHome}/Interface/Addons/${addOnName}"
+String classicEraAddonDir = "${classicEraHome}/Interface/Addons/${addOnName}"
+
+repositories {
+	mavenCentral()
+}
+
+dependencies {
+	
+}
+
+
+def contentSpec = copySpec {
+	from("${projectDir}") {
+		include "**/*.lua"
+		include "**/*.xml"
+		include "**/*.toc"
+		include "**/LICENSE"
+
+		exclude "**/.*"
+		exclude "**/Dev.toc"
+		exclude "**/*.gradle"
+		exclude "**/gradle"
+		exclude "**/gradle"
+		exclude "**/dev"
+	}
+}
+defaultTasks 'helpMe'
+
+task helpMe() {
+	doLast {
+		println 'Usage: '
+		println '  ./gradlew classic retail classic_era'
+		println '  ./gradlew tasks --all'
+	}
+}
+
+//task parseArgs {
+//	project.ext.enableClassic = false
+//	project.ext.enableRetail = false
+//	project.ext.enableClassicEra = false
+//
+//	assert project.hasProperty('which') : "<<ERROR>> Requires arg:  -Pwhich=retail,classic,classic-era"
+//
+//	def whichText = which
+//	def deploys = new HashSet(Set.of(whichText.split(",")))
+//	if (deploys.contains('classic')) project.ext.enableClassic = true
+//	if (deploys.contains('classic-era')) project.ext.enableClassicEra = true
+//	if (deploys.contains('retail')) project.ext.enableRetail = true
+//
+//	doFirst {
+//		println "Deploy Classic: ${project.ext.enableClassic}"
+//		println "Deploy Retail: ${project.ext.enableRetail}"
+//		println "Deploy Classic-Era: ${project.ext.enableClassicEra}"
+//	}
+//}
+
+def pwd = System.properties.getProperty("user.dir")
+println "Current Dir: ${pwd}"
+
+task verifyCWD() {
+	assert pwd.endsWith("/dev") : "<<ERROR>> Change dir to ./dev directory first before running deploy task.\nPWD is ${pwd}"
+}
+
+task classic(type: Copy, dependsOn: 'verifyCWD') {
+	caseSensitive false
+
+	into "${classicAddonDir}"
+	with contentSpec
+
+	doLast {
+		println "Deployed to: ${classicAddonDir}"
+	}
+}
+task classic_era(type: Copy, dependsOn: 'verifyCWD') {
+	caseSensitive false
+	into "${classicEraAddonDir}"
+	with contentSpec
+
+	doLast {
+		println "Deployed to: ${classicEraAddonDir}"
+	}
+}
+
+task retail(type: Copy, dependsOn: 'verifyCWD') {
+	caseSensitive false
+	into "${retailAddonDir}"
+	with contentSpec
+
+	doLast {
+		println "Deployed to: ${retailAddonDir}"
+	}
+}

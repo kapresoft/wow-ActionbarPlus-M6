@@ -2,6 +2,8 @@
 Modules
 -------------------------------------------------------------------------------]]
 local addon, ns = ...
+--- @type Kapresoft_LibUtil
+local K = ns.Kapresoft_LibUtil
 
 --- @class Modules
 local L = {
@@ -15,26 +17,32 @@ setmetatable(L, L.mt)
 local M = {
     LibStub = 'LibStub',
     -- Kapresoft Libraries
-    Logger = 'Logger',
-    LogFactory = 'LogFactory',
+    Mixin = 'Mixin',
+    LoggerMixin = K.M,
     PrettyPrint = 'PrettyPrint',
     Table = 'Table',
     String = 'String',
     Safecall = 'Safecall',
     LuaEvaluator = 'LuaEvaluator',
     Assert = 'Assert',
+    AceLibrary = 'AceLibrary',
+    -- ActionbarPlus-M6 Libraries
+    GlobalConstants = 'GlobalConstants',
+    EventHandler = 'EventHandler',
 }
 
 --- @class GlobalObjects
 local GlobalObjectsTemplate = {
+    --- @type Kapresoft_LibUtil_Mixin
+    Mixin = {},
     --- @type LocalLibStub
     LibStub = {},
+    --- @type Kapresoft_LoggerMixin
+    LoggerMixin = {},
     --- @type Kapresoft_LibUtil_AceLibraryObjects
     AceLibrary = {},
     --- @type Kapresoft_LibUtil_Assert
     Assert = {},
-    --- @type Logger
-    Logger = {},
     --- @type Kapresoft_LibUtil_LuaEvaluator,
     LuaEvaluator = {},
     --- @type Kapresoft_LibUtil_Safecall
@@ -47,6 +55,10 @@ local GlobalObjectsTemplate = {
     ---
     --- @type Modules
     Modules = {},
+    --- @type GlobalConstants
+    GlobalConstants = {},
+    --- @type EventHandler
+    EventHandler = {},
 }
 
 L.M = M

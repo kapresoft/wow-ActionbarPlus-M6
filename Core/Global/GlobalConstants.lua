@@ -33,7 +33,6 @@ New Instance
 --- @class GlobalConstants
 local L = {}
 
-
 --[[-----------------------------------------------------------------------------
 Methods: GlobalConstants
 -------------------------------------------------------------------------------]]
@@ -44,8 +43,15 @@ local function GlobalConstantProperties(o)
     --- @class ConstantNames
     local C = {
         ADDON_NAME = addon,
-        DB_NAME = 'ABP_PLUS_M6_DB',
+        DB_NAME = 'ABP_M6_DB',
+        LOG_LEVEL_VAR = 'ABP_M6_LOG_LEVEL',
         ADDON_INFO_FMT = '%s|cfdeab676: %s|r',
+        --- @type Kapresoft_LibUtil_ColorDefinition
+        COLOR_DEF = {
+            primary   = '2db9fb',
+            secondary = 'fbeb2d',
+            tertiary = 'ffffff'
+        }
     }
 
     --- @class EventNames
@@ -59,6 +65,9 @@ local function GlobalConstantProperties(o)
     local Messages = {
         OnAddOnInitialized           = newMsg('OnAddOnInitialized'),
         OnAddOnReady                 = newMsg('OnAddOnReady'),
+
+        --- ActionbarPlus Messages
+        ABP_PLAYER_ENTERING_WORLD = 'ActionbarPlus::PLAYER_ENTERING_WORLD'
     }
 
     o.C = C
@@ -70,6 +79,8 @@ end
 
 --- @param o GlobalConstants
 local function GlobalConstantMethods(o)
+
+    function o:LibName(moduleName) return addon .. '-' .. moduleName .. '-1.0' end
 
     function o:AddonName() return o.C.ADDON_NAME end
     function o:GetAceLocale() return LibStub("AceLocale-3.0"):GetLocale(addon, true) end
@@ -114,9 +125,9 @@ local function GlobalConstantMethods(o)
         )
     end]]
 
-    function o:GetLogLevel() return ABP_LOG_LEVEL end
+    function o:GetLogLevel() return _G[o.C.LOG_LEVEL_VAR] or 0 end
     --- @param level number The log level between 1 and 100
-    function o:SetLogLevel(level) ABP_LOG_LEVEL = level or 1 end
+    function o:SetLogLevel(level) _G[o.C.LOG_LEVEL_VAR] = level or 1 end
     --- @param level number
     function o:ShouldLog(level) return self:GetLogLevel() >= level end
     function o:IsVerboseLogging() return self:ShouldLog(20) end

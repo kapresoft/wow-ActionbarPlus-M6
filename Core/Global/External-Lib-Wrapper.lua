@@ -5,7 +5,7 @@
 Local Vars
 -------------------------------------------------------------------------------]]
 --- @type Namespace
-local _, ns = ...
+local ns = select(2, ...)
 local K = ns.K().Objects
 
 ns:Register(ns.M.Assert, K.Assert)
@@ -15,3 +15,4 @@ ns:Register(ns.M.Mixin, K.Mixin)
 ns:Register(ns.M.LuaEvaluator, K.LuaEvaluator)
 ns:Register(ns.M.AceLibrary, K.AceLibrary.O)
 ns:Register(ns.M.Safecall, K.Safecall)
+ns:Register(ns.K().M.LoggerMixin, K.LoggerMixin)
