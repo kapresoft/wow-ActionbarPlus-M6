@@ -26,10 +26,7 @@ repositories {
 	mavenCentral()
 }
 
-dependencies {
-	
-}
-
+defaultTasks 'helpMe'
 
 def contentSpec = copySpec {
 	from("${projectDir}") {
@@ -46,7 +43,6 @@ def contentSpec = copySpec {
 		exclude "**/dev"
 	}
 }
-defaultTasks 'helpMe'
 
 task helpMe() {
 	doLast {
@@ -55,26 +51,6 @@ task helpMe() {
 		println '  ./gradlew tasks --all'
 	}
 }
-
-//task parseArgs {
-//	project.ext.enableClassic = false
-//	project.ext.enableRetail = false
-//	project.ext.enableClassicEra = false
-//
-//	assert project.hasProperty('which') : "<<ERROR>> Requires arg:  -Pwhich=retail,classic,classic-era"
-//
-//	def whichText = which
-//	def deploys = new HashSet(Set.of(whichText.split(",")))
-//	if (deploys.contains('classic')) project.ext.enableClassic = true
-//	if (deploys.contains('classic-era')) project.ext.enableClassicEra = true
-//	if (deploys.contains('retail')) project.ext.enableRetail = true
-//
-//	doFirst {
-//		println "Deploy Classic: ${project.ext.enableClassic}"
-//		println "Deploy Retail: ${project.ext.enableRetail}"
-//		println "Deploy Classic-Era: ${project.ext.enableClassicEra}"
-//	}
-//}
 
 def pwd = System.properties.getProperty("user.dir")
 println "Current Dir: ${pwd}"
