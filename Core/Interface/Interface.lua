@@ -60,3 +60,25 @@ ApplyLoggerMethods(BaseObject)
 local BaseObject_WithAceEvent = {}
 ApplyLoggerMethods(BaseObject_WithAceEvent)
 
+--- @class SpellInfo
+local SpellInfo = {
+    id = 1,
+    name = 'Arcane Intellect',
+    icon = 1,
+}
+
+--- @class ItemInfo
+local ItemInfo = {
+    id = 1,
+    name = 'item name',
+    icon = 1,
+    level = 1,
+    minLevel = 1,
+    link = 'item link',
+    stackCount = 1,
+    count = 1,
+    isCraftingReagent = false,
+    type = 'type',
+    subType = 'subType',
+    equipLoc='loc', classID=1, subclassID=1, bindType=1
+}

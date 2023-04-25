@@ -3,15 +3,27 @@ Local Vars
 -------------------------------------------------------------------------------]]
 --- @type Namespace
 local ns = select(2, ...)
-local O, pformat = ns.O, ns.pformat
+local O, pformat, sformat = ns.O, ns.pformat, string.format
 local GC, AceEvent, String = O.GlobalConstants, O.AceLibrary.AceEvent, O.String
 local IsBlank, IsNotBlank, StartsWithIgnoreCase = String.IsBlank, String.IsNotBlank, String.StartsWithIgnoreCase
 
 local missingTexture = 134400
+local MACRO_M6_FORMAT = ' :: |cffffd000%s|r |cfd5a5a5a(Macro :: %s)|r'
 
 --- This will be populated later
 --- @type ActionbarPlusAPI
 local ABPI
+
+--[[-----------------------------------------------------------------------------
+Temporary Localization
+-------------------------------------------------------------------------------]]
+local L = L or {}
+L['Missing Spell or Item'] = 'Missing Spell or Item'
+L['Inactive'] = 'Inactive'
+
+
+local MISSING_SPELL_OR_ITEM = DIM_RED_FONT_COLOR:WrapTextInColorCode(sformat('<<%s>>', L['Missing Spell or Item']))
+local INACTIVE_M6_MACRO = DIM_RED_FONT_COLOR:WrapTextInColorCode(L['Inactive'])
 
 --[[-----------------------------------------------------------------------------
 New Instance
@@ -60,6 +72,44 @@ local function RemoveInactiveMacros()
         bw:SetText(nil)
         return false
     end)
+end
+
+
+
+--- @param w ButtonUIWidget
+local function ShowTooltip(w)
+    local md = w:GetMacroData(); if not md then return end
+    local m = md.name; if IsBlank(m) then return end
+    local slotID = S:slotIDByMacroName(m); if not slotID then return end
+
+    local hint = S:macroHintBySlotIDMinimal(slotID);
+    if not hint then
+        GameTooltip:SetText(INACTIVE_M6_MACRO)
+        GameTooltip:AppendText(sformat(MACRO_M6_FORMAT, '', m))
+        return
+    end
+
+    local m6MacroName, spellName = hint.name, hint.spell
+
+    local spell = S:GetSpellInfo(spellName)
+    if spell and spell.id then
+        GameTooltip:SetSpellByID(spell.id)
+        GameTooltip:AppendText(sformat(MACRO_M6_FORMAT, m6MacroName, m))
+        return
+    end
+
+    local item = S:GetItemInfo(spellName)
+    if item and item.id then
+        GameTooltip:SetItemByID(item.id)
+        GameTooltip:AppendText(sformat(MACRO_M6_FORMAT, m6MacroName, m))
+        return
+    end
+
+    if IsNotBlank(m6MacroName) then
+        GameTooltip:SetText(MISSING_SPELL_OR_ITEM)
+        GameTooltip:AppendText(sformat(MACRO_M6_FORMAT, m6MacroName, m))
+    end
+
 end
 
 
@@ -158,6 +208,19 @@ local function PropertiesAndMethods(o)
         return ("_M6+%s"):format(slotID)
     end
 
+    --- @see M6::Core.lua::GetHint(slotID)
+    --- @return M6Support_MacroHint
+    --- @param slotID string The numeric slotID. Returns null if slot is not active.
+    function o:macroHintBySlotIDMinimal(slotID)
+        local m6Name, isActive, _, iconId, spellOrItemName, itemCount = M6:GetHint(slotID)
+        if not m6Name then return nil end
+        --- @type M6Support_MacroHint
+        local ret = {
+            name = m6Name, isActive = isActive or false, icon = iconId,
+            spell = spellOrItemName, itemCount = itemCount }
+        return ret
+    end
+
     --- #### Example Call:
     --- ```
     --- macroName, isActive, _, iconID, spellName = M6Support:GetMacroHint('_M6+s01')
@@ -171,9 +234,10 @@ local function PropertiesAndMethods(o)
     --- ```
     --- @see M6::Core.lua::GetHint(slotID)
     --- @return M6Support_MacroHint
-    --- @param slotID string The numeric slotID
+    --- @param slotID string The numeric slotID. Returns null if slot is not active.
     function o:macroHintBySlotID(slotID)
         if not slotID then return nil end
+        --- active slots (with missing items, etc) will return a name
         --- inactive slots will not return a hint
         local m6Name, isActive, _, iconId, spellOrItemName,
                     itemCount, unknown1, unknown2, fn, unknown3 = M6:GetHint(slotID)
@@ -203,6 +267,13 @@ local function PropertiesAndMethods(o)
     ---@param icon number
     function o:iconKey(icon) return M6:GetIconKey(icon) end
 
+    function o:iconByIconKey(icon)
+        local slotID = self:iconKey(icon)
+        if not slotID then return nil end
+        local h = self:macroHintBySlotID(slotID); if not h then return nil end
+        return h.icon
+    end
+
     --- @param actionID number
     --- @return M6Support_MacroHint
     function o:macroHintByAction(actionID)
@@ -214,6 +285,52 @@ local function PropertiesAndMethods(o)
     function o:IsActionActive(actionID)
         if actionID then return M6:IsActionActivated(actionID) end
         return false
+    end
+
+    --- @return SpellInfo
+    function o:GetSpellInfo(spellNameOrId)
+        local name, _, icon, castTime, minRange, maxRange, id = GetSpellInfo(spellNameOrId)
+        return { name = name, id = id, icon = icon }
+    end
+
+    function S:GetItemID(itemName)
+        if String.IsBlank(itemName) then return nil end
+        local link = select(2, GetItemInfo(itemName))
+        if not link then return nil end
+        local itemID = GetItemInfoFromHyperlink(link)
+        return itemID
+    end
+
+    --- @param itemIDOrName number|string The itemID or itemName
+    --- @return number The numeric itemID
+    function S:ResolveItemID(itemIDOrName)
+        if type(itemIDOrName) == 'string' then
+            return self:GetItemID(itemIDOrName)
+        elseif type(itemIDOrName) == 'number' then
+            return itemIDOrName
+        end
+        return nil
+    end
+
+    --- @return ItemInfo
+    function o:GetItemInfo(itemIDOrName)
+        local itemID = self:ResolveItemID(itemIDOrName); if not itemID then return nil end
+
+        local itemName, itemLink,
+        itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount,
+        itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType,
+        expacID, setID, isCraftingReagent = GetItemInfo(itemID)
+
+        local count = GetItemCount(itemID, false, true, true) or 0
+
+        ---@type ItemInfo
+        local itemInfo = { id = itemID, name = itemName, link = itemLink, icon = itemTexture,
+                           quality = itemQuality, level = itemLevel, minLevel = itemMinLevel,
+                           type = itemType, subType = itemSubType, stackCount = itemStackCount,
+                           count = count, equipLoc=itemEquipLoc, classID=classID,
+                           subclassID=subclassID, bindType=bindType,
+                           isCraftingReagent=isCraftingReagent }
+        return itemInfo
     end
 
     --- @param slotID string The numeric slotID
@@ -245,7 +362,7 @@ PropertiesAndMethods(S)
 Message Callbacks
 -------------------------------------------------------------------------------]]
 AceEvent:RegisterMessage(GC.M.ABP_PLAYER_ENTERING_WORLD,function(msg, source, ...)
-    p:log(30, 'Received message from [%s]: %s', tostring(source), msg)
+    --p:log(30, 'Received message from [%s]: %s', tostring(source), msg)
     local apiLib = 'ActionbarPlus-ActionbarPlusAPI-1.0'
     ABPI = ns.LibStubAce('ActionbarPlus-ActionbarPlusAPI-1.0')
     if not ABPI then
@@ -253,6 +370,21 @@ AceEvent:RegisterMessage(GC.M.ABP_PLAYER_ENTERING_WORLD,function(msg, source, ..
         return
     end
     S:InitializeHooks()
+end)
+
+AceEvent:RegisterMessage(GC.M.MacroAttributeSetter_OnSetIcon,function(msg, source, fn)
+    --p:log(30, 'Received message from [%s]: %s', tostring(source), msg)
+    --- @type ButtonUIWidget
+    local widget = fn()
+    local icon = S:iconByIconKey(widget:GetIcon())
+    if not icon then icon = missingTexture end
+    widget:SetIcon(icon)
+end)
+AceEvent:RegisterMessage(GC.M.MacroAttributeSetter_OnShowTooltip,function(msg, source, fn)
+    --p:log(30, 'Received message from [%s]: %s', tostring(source), msg)
+    --- @type ButtonUIWidget
+    local widget = fn()
+    ShowTooltip(widget)
 end)
 
 -- todo next: m6 todo items

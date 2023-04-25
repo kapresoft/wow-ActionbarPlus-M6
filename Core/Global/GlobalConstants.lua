@@ -60,14 +60,17 @@ local function GlobalConstantProperties(o)
     }
 
     local function newMsg(msg) return sformat("%s::%s", addon, msg) end
+    local function newMsgABP(msg) return sformat("%s::%s", 'ActionbarPlus', msg) end
 
     --- @class MessageNames
     local Messages = {
-        OnAddOnInitialized           = newMsg('OnAddOnInitialized'),
-        OnAddOnReady                 = newMsg('OnAddOnReady'),
+        OnAddOnInitialized             = newMsg('OnAddOnInitialized'),
+        OnAddOnReady                   = newMsg('OnAddOnReady'),
 
         --- ActionbarPlus Messages
-        ABP_PLAYER_ENTERING_WORLD = 'ActionbarPlus::PLAYER_ENTERING_WORLD'
+        ABP_PLAYER_ENTERING_WORLD = newMsgABP('PLAYER_ENTERING_WORLD'),
+        MacroAttributeSetter_OnSetIcon = newMsgABP('MacroAttributeSetter:OnSetIcon'),
+        MacroAttributeSetter_OnShowTooltip = newMsgABP('MacroAttributeSetter:OnShowTooltip'),
     }
 
     o.C = C
