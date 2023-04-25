@@ -29,6 +29,24 @@ Notes
 --[[-----------------------------------------------------------------------------
 Support Functions
 -------------------------------------------------------------------------------]]
+local function InitializeM6Icons()
+    --- Initially, the m6 icons set. The icons are identifiers to slotIDs
+    --- Grab the slotID and retrieve the real icons
+    ABPI:UpdateM6Macros(function(bw)
+        local n = bw:GetMacroData().name
+        local m6Icon = bw:GetIcon()
+        local icon = m6Icon
+        local slotID = S:iconKey(icon)
+        if slotID then
+            local hint = S:macroHintBySlotID(slotID)
+            if hint then icon = hint.icon end
+        end
+        p:log(30, 'Init-Icons[%s]: %s icon=%s m6-key=%s r-icon=%s', n, bw:GetName(),
+                tostring(m6Icon), tostring(slotID), tostring(icon))
+        bw:SetIcon(icon)
+    end)
+end
+
 local function RemoveInactiveMacros()
     ABPI:UpdateMacros(function(bw)
         local d = bw:GetMacroData()
@@ -53,6 +71,7 @@ local H = {}
 ---@param o M6_EventHandler
 local function EventHandlerPropertiesAndMethods(o)
 
+    --- Called When an M6 Macro is Saved
     --- @param userIcon Icon
     --- @param actionID number
     function o:OnSetActionIcon(actionID, userIcon)
@@ -66,7 +85,7 @@ local function EventHandlerPropertiesAndMethods(o)
         if not icon then icon = missingTexture end
 
         ABPI:UpdateMacrosByName(macroName, function(bw)
-            p:log(30, 'found[%s]: %s', macroName, bw:GetName())
+            p:log(0, 'found[%s]: %s', macroName, bw:GetName())
             bw:SetIcon(hint.icon)
         end)
 
@@ -169,7 +188,7 @@ local function PropertiesAndMethods(o)
             itemCount = itemCount,
             unknown1 = unknown1, unknown2 = unknown2, fn = fn, unknown3 = unknown3,
         }
-        p:log(0, 'slotID[%s]: %s', tostring(slotID), ret)
+        p:log(30, 'slotID[%s]: %s', tostring(slotID), ret)
 
         local macroName = S:macroNameBySlot(slotID)
         if IsBlank(m6Name) or IsBlank(macroName) or ret.icon == nil then return nil end
@@ -180,6 +199,9 @@ local function PropertiesAndMethods(o)
 
         return ret
     end
+
+    ---@param icon number
+    function o:iconKey(icon) return M6:GetIconKey(icon) end
 
     --- @param actionID number
     --- @return M6Support_MacroHint
@@ -211,6 +233,9 @@ local function PropertiesAndMethods(o)
             p:log(0, 'hooksecurefunc()::DeactivateAction::id: %s', actionID)
             H:OnDeactivateAction(actionID)
         end)
+
+        InitializeM6Icons()
+
     end
 
 end
@@ -229,3 +254,7 @@ AceEvent:RegisterMessage(GC.M.ABP_PLAYER_ENTERING_WORLD,function(msg, source, ..
     end
     S:InitializeHooks()
 end)
+
+-- todo next: m6 todo items
+-- todo next: m6 handle drag and drop icon
+-- todo next: m6 handle drag and drop tooltip

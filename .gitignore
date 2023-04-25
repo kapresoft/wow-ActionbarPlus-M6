@@ -41,7 +41,7 @@ luac.out
 
 # IDE's
 *.iml
-/.idea/
+/.idea*/
 /.history/
 /.vscode/
 /Core/ExtLib/.Ace3.*

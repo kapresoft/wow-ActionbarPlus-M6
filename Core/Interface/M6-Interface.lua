@@ -41,11 +41,11 @@ Interface:: ActionbarPlusAPI
 --- @class ButtonUIWidget
 local ButtonUIWidget = {
 }
----@param o ButtonUIWidget
+--- @param o ButtonUIWidget
 local function ButtonUIWidget_Methods(o)
     --- @return string
     function o:GetName() end
-    ---@param icon Icon
+    --- @param icon Icon
     function o:SetIcon(icon) end
 end
 ButtonUIWidget_Methods(ButtonUIWidget)
@@ -54,18 +54,25 @@ ButtonUIWidget_Methods(ButtonUIWidget)
 --- @alias ButtonPredicateFunction fun(btnWidget:ButtonUIWidget) | "function(btnWidget) return true end"
 --- @class ActionbarPlusAPI
 local ActionbarPlusAPI = {}
----@param o ActionbarPlusAPI
+--- @param o ActionbarPlusAPI
 local function ActionbarPlusAPI_Methods(o)
 
-    ---@param btnHandlerFn ButtonHandlerFunction
+    --- @param macroName string
+    --- @return boolean
+    function o:IsM6Macro(macroName) return true end
+
+    --- @param btnHandlerFn ButtonHandlerFunction
     function o:UpdateMacros(btnHandlerFn) end
 
-    ---@param macroName string
-    ---@param btnHandlerFn ButtonHandlerFunction
+    --- @param btnHandlerFn ButtonHandlerFunction
+    function o:UpdateM6Macros(btnHandlerFn) end
+
+    --- @param macroName string
+    --- @param btnHandlerFn ButtonHandlerFunction
     function o:UpdateMacrosByName(macroName, btnHandlerFn) end
 
-    ---@param predicateFn ButtonPredicateFunction
-    ---@return table<number, ButtonUIWidget>
+    --- @param predicateFn ButtonPredicateFunction
+    --- @return table<number, ButtonUIWidget>
     function o:FindMacros(predicateFn) end
 end
 ActionbarPlusAPI_Methods(ActionbarPlusAPI)
