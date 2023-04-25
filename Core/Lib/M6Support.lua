@@ -7,7 +7,9 @@ local O, pformat, sformat = ns.O, ns.pformat, string.format
 local GC, AceEvent, String = O.GlobalConstants, O.AceLibrary.AceEvent, O.String
 local IsBlank, IsNotBlank, StartsWithIgnoreCase = String.IsBlank, String.IsNotBlank, String.StartsWithIgnoreCase
 
-local missingTexture = 134400
+local ABP_API_NAME = 'ActionbarPlus-ActionbarPlusAPI-1.0'
+local M6_DEFAULT_ICON = 10741611000
+local MISSING_ICON = 134400
 local MACRO_M6_FORMAT = ' :: |cffffd000%s|r |cfd5a5a5a(Macro :: %s)|r'
 
 --- This will be populated later
@@ -45,17 +47,21 @@ local function InitializeM6Icons()
     --- Initially, the m6 icons set. The icons are identifiers to slotIDs
     --- Grab the slotID and retrieve the real icons
     ABPI:UpdateM6Macros(function(bw)
-        local n = bw:GetMacroData().name
+        local d = bw:GetMacroData()
         local m6Icon = bw:GetIcon()
-        local icon = m6Icon
-        local slotID = S:iconKey(icon)
+        local slotID = S:slotIDFromIcon(m6Icon)
+        local icon
         if slotID then
             local hint = S:macroHintBySlotID(slotID)
-            if hint then icon = hint.icon end
+            if hint then
+                icon = hint.icon or d.icon2
+            elseif d.icon2 then
+                icon = d.icon2
+            end
+            if not icon then icon = MISSING_ICON
+            end
         end
-        p:log(30, 'Init-Icons[%s]: %s icon=%s m6-key=%s r-icon=%s', n, bw:GetName(),
-                tostring(m6Icon), tostring(slotID), tostring(icon))
-        bw:SetIcon(icon)
+        if icon then bw:SetIcon(icon) end
     end)
 end
 
@@ -73,8 +79,6 @@ local function RemoveInactiveMacros()
         return false
     end)
 end
-
-
 
 --- @param w ButtonUIWidget
 local function ShowTooltip(w)
@@ -132,7 +136,8 @@ local function EventHandlerPropertiesAndMethods(o)
         local hint = S:macroHintByAction(actionID); if hint == nil then return end
         p:log(30, '[%s::%s]:: hint=%s', hint.name, actionID, pformat(hint))
         local icon, itemCount, macroName = hint.icon, hint.itemCount, hint.macroName
-        if not icon then icon = missingTexture end
+        if not icon then icon = MISSING_ICON
+        end
 
         ABPI:UpdateMacrosByName(macroName, function(bw)
             p:log(0, 'found[%s]: %s', macroName, bw:GetName())
@@ -264,11 +269,13 @@ local function PropertiesAndMethods(o)
         return ret
     end
 
-    ---@param icon number
-    function o:iconKey(icon) return M6:GetIconKey(icon) end
+    --- @param icon number
+    --- @return string The slotID
+    function o:slotIDFromIcon(icon) return M6:GetIconKey(icon) end
 
+    --- @return number The icon
     function o:iconByIconKey(icon)
-        local slotID = self:iconKey(icon)
+        local slotID = self:slotIDFromIcon(icon)
         if not slotID then return nil end
         local h = self:macroHintBySlotID(slotID); if not h then return nil end
         return h.icon
@@ -352,7 +359,7 @@ local function PropertiesAndMethods(o)
         end)
 
         InitializeM6Icons()
-
+        --InitM6IconsTmp()
     end
 
 end
@@ -362,23 +369,26 @@ PropertiesAndMethods(S)
 Message Callbacks
 -------------------------------------------------------------------------------]]
 AceEvent:RegisterMessage(GC.M.ABP_PLAYER_ENTERING_WORLD,function(msg, source, ...)
-    --p:log(30, 'Received message from [%s]: %s', tostring(source), msg)
-    local apiLib = 'ActionbarPlus-ActionbarPlusAPI-1.0'
-    ABPI = ns.LibStubAce('ActionbarPlus-ActionbarPlusAPI-1.0')
+    ABPI = ns.LibStubAce(ABP_API_NAME)
     if not ABPI then
-        p:log(0, 'Lib was not available: %s', apiLib)
+        p:log(0, 'Lib was not available: %s', ABP_API_NAME)
         return
     end
     S:InitializeHooks()
+
 end)
 
 AceEvent:RegisterMessage(GC.M.MacroAttributeSetter_OnSetIcon,function(msg, source, fn)
-    --p:log(30, 'Received message from [%s]: %s', tostring(source), msg)
     --- @type ButtonUIWidget
-    local widget = fn()
-    local icon = S:iconByIconKey(widget:GetIcon())
-    if not icon then icon = missingTexture end
-    widget:SetIcon(icon)
+    local bw = fn()
+    local icon = S:iconByIconKey(bw:GetIcon())
+    local d = bw:GetMacroData()
+    if icon and icon < M6_DEFAULT_ICON then d.icon2 = icon end
+
+    if not icon then icon = d.icon2 end
+    if not icon then icon = MISSING_ICON
+    end
+    bw:SetIcon(icon)
 end)
 AceEvent:RegisterMessage(GC.M.MacroAttributeSetter_OnShowTooltip,function(msg, source, fn)
     --p:log(30, 'Received message from [%s]: %s', tostring(source), msg)
@@ -388,5 +398,4 @@ AceEvent:RegisterMessage(GC.M.MacroAttributeSetter_OnShowTooltip,function(msg, s
 end)
 
 -- todo next: m6 todo items
--- todo next: m6 handle drag and drop icon
--- todo next: m6 handle drag and drop tooltip
+-- handle spell and item states: usable, count, charge

@@ -38,20 +38,7 @@ local M6Support_MacroHint = {
 --[[-----------------------------------------------------------------------------
 Interface:: ActionbarPlusAPI
 -------------------------------------------------------------------------------]]
---- @class ButtonUIWidget
-local ButtonUIWidget = {
-}
---- @param o ButtonUIWidget
-local function ButtonUIWidget_Methods(o)
-    --- @return string
-    function o:GetName() end
-    --- @param icon Icon
-    function o:SetIcon(icon) end
-end
-ButtonUIWidget_Methods(ButtonUIWidget)
 
---- @alias ButtonHandlerFunction fun(btnWidget:ButtonUIWidget) | "function(btnWidget) print(btnWidget:GetName() end"
---- @alias ButtonPredicateFunction fun(btnWidget:ButtonUIWidget) | "function(btnWidget) return true end"
 --- @class ActionbarPlusAPI
 local ActionbarPlusAPI = {}
 --- @param o ActionbarPlusAPI
