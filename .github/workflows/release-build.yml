@@ -30,8 +30,8 @@ env:
   releaseDir: ./.release
   refName: ${{ github.ref_name }}
   createDraftRelease: true
-  uploadCurseForge: false
-  uploadWowInterface: false
+  uploadCurseForge: true
+  uploadWowInterface: true
 
 jobs:
   build:
