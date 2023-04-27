@@ -29,37 +29,20 @@ local M6Support_MacroHint = {
     unknown2 = 0,
     fn = function()  end,
     unknown3 = 0,
+}
+--- @class M6Support_MacroHint_Extended : M6Support_MacroHint
+local M6Support_MacroHint_Extended = {
+    name = 'm6-name',
+    isActive = true,
+    icon = 123456,
+    spell = 'spell-or-item',
+    itemCount = 1,
+    unknown1 = 0,
+    unknown2 = 0,
+    fn = function()  end,
+    unknown3 = 0,
     --- Add-On Specific fields
     slotID = 1,
     macroName = '_M6+s01',
 }
 
-
---[[-----------------------------------------------------------------------------
-Interface:: ActionbarPlusAPI
--------------------------------------------------------------------------------]]
-
---- @class ActionbarPlusAPI
-local ActionbarPlusAPI = {}
---- @param o ActionbarPlusAPI
-local function ActionbarPlusAPI_Methods(o)
-
-    --- @param macroName string
-    --- @return boolean
-    function o:IsM6Macro(macroName) return true end
-
-    --- @param btnHandlerFn ButtonHandlerFunction
-    function o:UpdateMacros(btnHandlerFn) end
-
-    --- @param btnHandlerFn ButtonHandlerFunction
-    function o:UpdateM6Macros(btnHandlerFn) end
-
-    --- @param macroName string
-    --- @param btnHandlerFn ButtonHandlerFunction
-    function o:UpdateMacrosByName(macroName, btnHandlerFn) end
-
-    --- @param predicateFn ButtonPredicateFunction
-    --- @return table<number, ButtonUIWidget>
-    function o:FindMacros(predicateFn) end
-end
-ActionbarPlusAPI_Methods(ActionbarPlusAPI)

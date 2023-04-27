@@ -68,9 +68,13 @@ local function GlobalConstantProperties(o)
         OnAddOnReady                   = newMsg('OnAddOnReady'),
 
         --- ActionbarPlus Messages
-        ABP_PLAYER_ENTERING_WORLD = newMsgABP('PLAYER_ENTERING_WORLD'),
-        MacroAttributeSetter_OnSetIcon = newMsgABP('MacroAttributeSetter:OnSetIcon'),
-        MacroAttributeSetter_OnShowTooltip = newMsgABP('MacroAttributeSetter:OnShowTooltip'),
+        ABP_PLAYER_ENTERING_WORLD               = newMsgABP('PLAYER_ENTERING_WORLD'),
+        ABP_OnUpdateMacroState                  = newMsgABP('OnUpdateMacroState'),
+        ABP_OnSpellCastSucceeded                = newMsgABP('OnSpellCastSucceeded'),
+        ABP_OnBagUpdateExt                      = newMsgABP('OnBagUpdateExt'),
+        ABP_OnButtonPostClickExt                = newMsgABP('OnButtonPostClickExt'),
+        ABP_MacroAttributeSetter_OnSetIcon      = newMsgABP('MacroAttributeSetter:OnSetIcon'),
+        ABP_MacroAttributeSetter_OnShowTooltip  = newMsgABP('MacroAttributeSetter:OnShowTooltip'),
     }
 
     o.C = C

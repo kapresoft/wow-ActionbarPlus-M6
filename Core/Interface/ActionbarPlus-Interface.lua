@@ -1,12 +1,48 @@
 --[[-----------------------------------------------------------------------------
 Interface files that need to be synced with ActionbarPlus codebase
 -------------------------------------------------------------------------------]]
---- @alias ButtonHandlerFunction fun(btnWidget:ButtonUIWidget) | "function(btnWidget) print(btnWidget:GetName() end"
+--- @alias ButtonHandlerFunction fun(btnWidget:ButtonUIWidget) | "function(btnWidget) print(btnWidget:GetName()) end"
 --- @alias ButtonPredicateFunction fun(btnWidget:ButtonUIWidget) | "function(btnWidget) return true end"
 
+--[[-----------------------------------------------------------------------------
+Interface:: ActionbarPlusAPI
+-------------------------------------------------------------------------------]]
+--- @class ActionbarPlusAPI
+local ActionbarPlusAPI = {}
+--- @param o ActionbarPlusAPI
+local function ActionbarPlusAPI_Methods(o)
+
+    --- @param itemIDOrName number|string The itemID or itemName
+    --- @return ItemInfo
+    function o:GetItemInfo(itemIDOrName) end
+
+    --- @param macroName string
+    --- @return boolean
+    function o:IsM6Macro(macroName) end
+
+    --- @param btnHandlerFn ButtonHandlerFunction
+    function o:UpdateMacros(btnHandlerFn) end
+
+    --- @param btnHandlerFn ButtonHandlerFunction
+    function o:UpdateM6Macros(btnHandlerFn) end
+
+    --- @param macroName string
+    --- @param btnHandlerFn ButtonHandlerFunction
+    function o:UpdateMacrosByName(macroName, btnHandlerFn) end
+
+    --- @param predicateFn ButtonPredicateFunction
+    --- @return table<number, ButtonUIWidget>
+    function o:FindMacros(predicateFn) end
+end
+ActionbarPlusAPI_Methods(ActionbarPlusAPI)
+
+--[[-----------------------------------------------------------------------------
+Interface:: ButtonUIWidget
+-------------------------------------------------------------------------------]]
+
 --- @class ButtonUIWidget
-local ButtonUIWidget = {
-}
+local ButtonUIWidget = {}
+
 --- @param o ButtonUIWidget
 local function ButtonUIWidget_Methods(o)
 
@@ -21,6 +57,12 @@ local function ButtonUIWidget_Methods(o)
     function o:GetName() end
     --- @param icon Icon
     function o:SetIcon(icon) end
+
+    --- @param itemIDOrName number|string The itemID or itemName
+    function o:UpdateItemStateByItem(itemIDOrName) end
+    ---@param itemInfo ItemInfo
+    function o:UpdateItemStateByItemInfo(itemInfo) end
+
 end
 ButtonUIWidget_Methods(ButtonUIWidget)
 
@@ -56,3 +98,19 @@ local Profile_Macro = {
     ["body"] = "/lol\n",
 }
 
+--- @class ItemInfo
+local ItemInfo = {
+    id = 1,
+    name = 'item name',
+    link = 'item link',
+    icon = 1,
+    quality = 1,
+    level = 1,
+    minLevel = 1,
+    type = 'type',
+    subType = 'subType',
+    stackCount = 1,
+    count = 1,
+    equipLoc='loc', classID=1, subclassID=1, bindType=1,
+    isCraftingReagent = false,
+}

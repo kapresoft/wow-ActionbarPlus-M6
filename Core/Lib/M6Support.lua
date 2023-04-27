@@ -51,18 +51,34 @@ local function InitializeM6Icons()
         local m6Icon = bw:GetIcon()
         local slotID = S:slotIDFromIcon(m6Icon)
         local icon
+        local spell
         if slotID then
             local hint = S:macroHintBySlotID(slotID)
             if hint then
-                icon = hint.icon or d.icon2
+                icon, spell = hint.icon or d.icon2, hint.spell
             elseif d.icon2 then
                 icon = d.icon2
             end
-            if not icon then icon = MISSING_ICON
-            end
+            if not icon then icon = MISSING_ICON end
         end
         if icon then bw:SetIcon(icon) end
+        if spell then
+            C_Timer.NewTicker(0.2, function()
+                bw:UpdateItemStateByItem(spell)
+                -- todo UpdateText
+                -- todo UpdateCooldown()
+            end, 1)
+        end
     end)
+end
+
+---@param bw ButtonUIWidget
+local function UpdateStateByWidget(bw)
+    local itemInfo = S:itemInfoByMacroName(bw)
+    if not itemInfo then bw:SetText('')
+    else bw:UpdateItemStateByItemInfo(itemInfo)
+    end
+    -- todo next: add spell updates
 end
 
 local function RemoveInactiveMacros()
@@ -86,7 +102,7 @@ local function ShowTooltip(w)
     local m = md.name; if IsBlank(m) then return end
     local slotID = S:slotIDByMacroName(m); if not slotID then return end
 
-    local hint = S:macroHintBySlotIDMinimal(slotID);
+    local hint = S:macroHintBySlotID(slotID);
     if not hint then
         GameTooltip:SetText(INACTIVE_M6_MACRO)
         GameTooltip:AppendText(sformat(MACRO_M6_FORMAT, '', m))
@@ -102,7 +118,7 @@ local function ShowTooltip(w)
         return
     end
 
-    local item = S:GetItemInfo(spellName)
+    local item = ABPI:GetItemInfo(spellName)
     if item and item.id then
         GameTooltip:SetItemByID(item.id)
         GameTooltip:AppendText(sformat(MACRO_M6_FORMAT, m6MacroName, m))
@@ -142,6 +158,8 @@ local function EventHandlerPropertiesAndMethods(o)
         ABPI:UpdateMacrosByName(macroName, function(bw)
             p:log(0, 'found[%s]: %s', macroName, bw:GetName())
             bw:SetIcon(hint.icon)
+
+            UpdateStateByWidget(bw)
         end)
 
         RemoveInactiveMacros()
@@ -213,12 +231,27 @@ local function PropertiesAndMethods(o)
         return ("_M6+%s"):format(slotID)
     end
 
+    --- @return number The icon
+    function o:iconByIconKey(icon)
+        local slotID = self:slotIDFromIcon(icon)
+        if not slotID then return nil end
+        local h = self:macroHintBySlotID(slotID); if not h then return nil end
+        return h.icon
+    end
+
+    --- @param actionID number
+    --- @return M6Support_MacroHint_Extended
+    function o:macroHintByAction(actionID)
+        local slotID = self:slotIDByAction(actionID)
+        return self:macroHintBySlotID(slotID)
+    end
+
     --- @see M6::Core.lua::GetHint(slotID)
     --- @return M6Support_MacroHint
     --- @param slotID string The numeric slotID. Returns null if slot is not active.
-    function o:macroHintBySlotIDMinimal(slotID)
+    function o:macroHintBySlotIDBase(slotID)
         local m6Name, isActive, _, iconId, spellOrItemName, itemCount = M6:GetHint(slotID)
-        if not m6Name then return nil end
+        if IsBlank(m6Name) then return nil end
         --- @type M6Support_MacroHint
         local ret = {
             name = m6Name, isActive = isActive or false, icon = iconId,
@@ -238,55 +271,39 @@ local function PropertiesAndMethods(o)
     --- Item:  {   'BuffSelf', true, 0, 134029, 'Conjured Cinnamon Roll', 15, 0, 0, [[function 1]], 1 }
     --- ```
     --- @see M6::Core.lua::GetHint(slotID)
-    --- @return M6Support_MacroHint
+    --- @return M6Support_MacroHint_Extended
     --- @param slotID string The numeric slotID. Returns null if slot is not active.
     function o:macroHintBySlotID(slotID)
         if not slotID then return nil end
-        --- active slots (with missing items, etc) will return a name
-        --- inactive slots will not return a hint
-        local m6Name, isActive, _, iconId, spellOrItemName,
-                    itemCount, unknown1, unknown2, fn, unknown3 = M6:GetHint(slotID)
-        if not m6Name then return nil end
+        --- @type M6Support_MacroHint_Extended
+        local ret = self:macroHintBySlotIDBase(slotID)
+        if not ret then return nil end
+        --if ret.icon == nil then return ret end
 
-        --- @type M6Support_MacroHint
-        local ret = {
-            name = m6Name,
-            isActive = isActive,
-            icon = iconId,
-            spell = spellOrItemName,
-            itemCount = itemCount,
-            unknown1 = unknown1, unknown2 = unknown2, fn = fn, unknown3 = unknown3,
-        }
-        p:log(30, 'slotID[%s]: %s', tostring(slotID), ret)
-
-        local macroName = S:macroNameBySlot(slotID)
-        if IsBlank(m6Name) or IsBlank(macroName) or ret.icon == nil then return nil end
-
-        --- Custom Fields
+        local macroName = S:macroNameBySlot(slotID); if IsBlank(macroName)then return ret end
+        --- Extended Fields
         ret.macroName = macroName
         ret.slotID = slotID
 
         return ret
     end
 
+    --- @type M6Support_MacroHint_Extended
+    --- @param macroName string
+    function o:macroHintByMacroName(macroName)
+        local slotID = self:slotIDByMacroName(macroName)
+        if not slotID then return nil end
+        --- @type M6Support_MacroHint_Extended
+        local ret = self:macroHintBySlotIDBase(slotID)
+        if not ret then return nil end
+        ret.slotID = slotID
+        ret.macroName = macroName
+        return ret
+    end
+
     --- @param icon number
     --- @return string The slotID
     function o:slotIDFromIcon(icon) return M6:GetIconKey(icon) end
-
-    --- @return number The icon
-    function o:iconByIconKey(icon)
-        local slotID = self:slotIDFromIcon(icon)
-        if not slotID then return nil end
-        local h = self:macroHintBySlotID(slotID); if not h then return nil end
-        return h.icon
-    end
-
-    --- @param actionID number
-    --- @return M6Support_MacroHint
-    function o:macroHintByAction(actionID)
-        local slotID = self:slotIDByAction(actionID)
-        return self:macroHintBySlotID(slotID)
-    end
 
     ---@param actionID number
     function o:IsActionActive(actionID)
@@ -300,49 +317,16 @@ local function PropertiesAndMethods(o)
         return { name = name, id = id, icon = icon }
     end
 
-    function S:GetItemID(itemName)
-        if String.IsBlank(itemName) then return nil end
-        local link = select(2, GetItemInfo(itemName))
-        if not link then return nil end
-        local itemID = GetItemInfoFromHyperlink(link)
-        return itemID
-    end
-
-    --- @param itemIDOrName number|string The itemID or itemName
-    --- @return number The numeric itemID
-    function S:ResolveItemID(itemIDOrName)
-        if type(itemIDOrName) == 'string' then
-            return self:GetItemID(itemIDOrName)
-        elseif type(itemIDOrName) == 'number' then
-            return itemIDOrName
-        end
-        return nil
-    end
-
-    --- @return ItemInfo
-    function o:GetItemInfo(itemIDOrName)
-        local itemID = self:ResolveItemID(itemIDOrName); if not itemID then return nil end
-
-        local itemName, itemLink,
-        itemQuality, itemLevel, itemMinLevel, itemType, itemSubType, itemStackCount,
-        itemEquipLoc, itemTexture, sellPrice, classID, subclassID, bindType,
-        expacID, setID, isCraftingReagent = GetItemInfo(itemID)
-
-        local count = GetItemCount(itemID, false, true, true) or 0
-
-        ---@type ItemInfo
-        local itemInfo = { id = itemID, name = itemName, link = itemLink, icon = itemTexture,
-                           quality = itemQuality, level = itemLevel, minLevel = itemMinLevel,
-                           type = itemType, subType = itemSubType, stackCount = itemStackCount,
-                           count = count, equipLoc=itemEquipLoc, classID=classID,
-                           subclassID=subclassID, bindType=bindType,
-                           isCraftingReagent=isCraftingReagent }
-        return itemInfo
-    end
-
     --- @param slotID string The numeric slotID
     --- @return boolean
     function o:IsSlotActive(slotID) return M6:GetHint(slotID) ~= nil end
+
+    ---@param bw ButtonUIWidget
+    function o:itemInfoByMacroName(bw)
+        local n = bw:GetMacroData().name
+        local hint = S:macroHintByMacroName(n); if not hint then return end
+        return ABPI:GetItemInfo(hint.spell)
+    end
 
     function S:InitializeHooks()
         --- @param userIcon Icon
@@ -359,7 +343,6 @@ local function PropertiesAndMethods(o)
         end)
 
         InitializeM6Icons()
-        --InitM6IconsTmp()
     end
 
 end
@@ -378,7 +361,7 @@ AceEvent:RegisterMessage(GC.M.ABP_PLAYER_ENTERING_WORLD,function(msg, source, ..
 
 end)
 
-AceEvent:RegisterMessage(GC.M.MacroAttributeSetter_OnSetIcon,function(msg, source, fn)
+AceEvent:RegisterMessage(GC.M.ABP_MacroAttributeSetter_OnSetIcon,function(msg, source, fn)
     --- @type ButtonUIWidget
     local bw = fn()
     local icon = S:iconByIconKey(bw:GetIcon())
@@ -386,16 +369,62 @@ AceEvent:RegisterMessage(GC.M.MacroAttributeSetter_OnSetIcon,function(msg, sourc
     if icon and icon < M6_DEFAULT_ICON then d.icon2 = icon end
 
     if not icon then icon = d.icon2 end
-    if not icon then icon = MISSING_ICON
-    end
+    if not icon then icon = MISSING_ICON end
     bw:SetIcon(icon)
+
+    UpdateStateByWidget(bw)
 end)
-AceEvent:RegisterMessage(GC.M.MacroAttributeSetter_OnShowTooltip,function(msg, source, fn)
+AceEvent:RegisterMessage(GC.M.ABP_MacroAttributeSetter_OnShowTooltip,function(msg, source, fn)
     --p:log(30, 'Received message from [%s]: %s', tostring(source), msg)
     --- @type ButtonUIWidget
     local widget = fn()
     ShowTooltip(widget)
 end)
 
+AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastSucceeded,function(msg, source)
+    p:log(30, 'Received message from [%s]: %s', tostring(source), msg)
+
+    -- todo next: update cooldown
+
+    ABPI:UpdateM6Macros(function(bw)
+        local d = bw:GetMacroData()
+        local n = d.name
+        local hint = S:macroHintByMacroName(n); if not hint then return end
+        --p:log('[%s]: hint=%s', n, pformat(hint))
+        if hint.icon then bw:SetIcon(hint.icon) end
+
+        UpdateStateByWidget(bw)
+
+        --bw:UpdateState()
+        --C_Timer.NewTicker(0.2, function()
+        --    bw:UpdateItemStateByItem(hint.spell)
+        --    -- todo UpdateCooldown()
+        --end, 2)
+    end)
+
+end)
+
+---@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
+---@param updateM6MacrosFn UpdateM6MacrosFn
+AceEvent:RegisterMessage(GC.M.ABP_OnBagUpdateExt,function(msg, source, updateM6MacrosFn)
+    --p:log(30, 'Received message from [%s]: %s', tostring(source), msg)
+    updateM6MacrosFn(function(bw)
+        UpdateStateByWidget(bw)
+    end)
+end)
+
+---@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
+---@param updateM6MacrosFn UpdateM6MacrosFn
+AceEvent:RegisterMessage(GC.M.ABP_OnButtonPostClickExt,function(msg, source, updateM6MacrosFn)
+    --p:log(30, 'MSG [%s]: %s', tostring(source), msg)
+    updateM6MacrosFn(function(bw)
+        local n = bw:GetMacroData().name
+        local hint = S:macroHintByMacroName(n); if not hint then return end
+        if hint.icon then bw:SetIcon(hint.icon) end
+        UpdateStateByWidget(bw)
+    end)
+end)
+
 -- todo next: m6 todo items
+-- bag updates
 -- handle spell and item states: usable, count, charge
