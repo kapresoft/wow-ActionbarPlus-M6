@@ -15,16 +15,16 @@
 ## X-Category: ActionBars
 ## X-License: All Rights Reserved: You are free to fork and modify on GitHub, please ask us about anything else.
 
-## X-Github-Repo: https://github.com/kapresoft/wowaddon-actionbar-plus
-## X-Github-Issues: https://github.com/kapresoft/wowaddon-actionbar-plus/issues
+## X-Github-Repo: https://github.com/kapresoft/wow-actionbarplus-m6
+## X-Github-Issues: https://github.com/kapresoft/wow-actionbarplus-m6/issues
 ## X-CurseForge: https://www.curseforge.com/wow/addons/actionbarplus
-## X-Curse-Project-ID: TBD
+## X-Curse-Project-ID: 855387
 ## X-Github-Project-Author: @project-author@
 ## X-Github-Project-Hash: @project-hash@
 ## X-Github-Project-Last-Changed-Date: @project-date-iso@
 ## X-Github-Project-Version: @project-version@
 
-## X-WoWI-ID: TBD
+## X-WoWI-ID: 26571
 
 ## X-PayPal-Donation-ID: AX58YP3GSGXVU
 ## X-PayPal-Donation-URL: https://www.paypal.com/donate/?hosted_button_id=AX58YP3GSGXVU
