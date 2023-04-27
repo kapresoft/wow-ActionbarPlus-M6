@@ -16,6 +16,14 @@ local function ActionbarPlusAPI_Methods(o)
     --- @return ItemInfo
     function o:GetItemInfo(itemIDOrName) end
 
+    --- @param itemIDOrName number|string The itemID or itemName
+    --- @return CooldownInfo
+    function o:GetItemCooldown(itemIDOrName)  end
+
+    --- @param spellNameOrID number|string Spell ID or Name. When passing a name requires the spell to be in your Spellbook.
+    --- @return CooldownInfo
+    function o:GetSpellCooldown(spellNameOrID) end
+
     --- @param macroName string
     --- @return boolean
     function o:IsM6Macro(macroName) end
@@ -113,4 +121,13 @@ local ItemInfo = {
     count = 1,
     equipLoc='loc', classID=1, subclassID=1, bindType=1,
     isCraftingReagent = false,
+}
+
+--- @class CooldownInfo
+local CooldownInfo = {
+    start=nil,
+    duration=nil,
+    enabled=0,
+    name = 'spell or item',
+    isItem = false
 }

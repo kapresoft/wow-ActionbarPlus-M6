@@ -73,6 +73,10 @@ local function GlobalConstantProperties(o)
         ABP_OnSpellCastSucceeded                = newMsgABP('OnSpellCastSucceeded'),
         ABP_OnBagUpdateExt                      = newMsgABP('OnBagUpdateExt'),
         ABP_OnButtonPostClickExt                = newMsgABP('OnButtonPostClickExt'),
+        ABP_OnSpellCastStartExt                 = newMsgABP('OnSpellCastStartExt'),
+        ABP_OnSpellCastSentExt                  = newMsgABP('OnSpellCastSentExt'),
+        ABP_OnSpellCastStopExt                  = newMsgABP('OnSpellCastStopExt'),
+        ABP_OnSpellCastFailedExt                = newMsgABP('OnSpellCastFailedExt'),
         ABP_MacroAttributeSetter_OnSetIcon      = newMsgABP('MacroAttributeSetter:OnSetIcon'),
         ABP_MacroAttributeSetter_OnShowTooltip  = newMsgABP('MacroAttributeSetter:OnShowTooltip'),
     }

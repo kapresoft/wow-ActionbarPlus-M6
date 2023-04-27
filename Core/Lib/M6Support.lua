@@ -73,12 +73,43 @@ local function InitializeM6Icons()
 end
 
 ---@param bw ButtonUIWidget
+local function UpdateIconByWidget(bw)
+    local d = bw:GetMacroData()
+    local n = d.name
+    local hint = S:macroHintByMacroName(n); if not hint then return end
+    p:log(30, '[%s]: hint=%s', n, pformat(hint))
+    if hint.icon then
+        C_Timer.After(0.1, function()
+            hint = S:macroHintByMacroName(n); if not hint then return end
+            --p:log('icon updated[%s]: %s', hint.spell, hint.icon)
+            bw:SetIcon(hint.icon)
+        end)
+    end
+end
+
+---@param bw ButtonUIWidget
 local function UpdateStateByWidget(bw)
     local itemInfo = S:itemInfoByMacroName(bw)
     if not itemInfo then bw:SetText('')
-    else bw:UpdateItemStateByItemInfo(itemInfo)
+    else
+        bw:UpdateItemStateByItemInfo(itemInfo)
+
     end
     -- todo next: add spell updates
+end
+
+---@param bw ButtonUIWidget
+local function UpdateCooldownByWidget(bw)
+    local n = bw:GetMacroData().name
+    local hint = S:macroHintByMacroName(n); if not hint then return end
+    p:log(30, 'hint=%s', pformat(hint))
+    if not hint.spell then return end
+
+    local cd = S:GetCooldownInfo(hint.spell)
+    p:log(30, 'cd[%s]: spell=%s %s', n, hint.spell, pformat(cd))
+    if cd then
+        bw:SetCooldown(cd.start, cd.duration)
+    end
 end
 
 local function RemoveInactiveMacros()
@@ -328,6 +359,22 @@ local function PropertiesAndMethods(o)
         return ABPI:GetItemInfo(hint.spell)
     end
 
+    ---@param spellOrItemName string
+    ---@return CooldownInfo
+    function o:GetCooldownInfo(spellOrItemName)
+
+        local itemInfo = ABPI:GetItemInfo(spellOrItemName)
+        if itemInfo then
+            return ABPI:GetItemCooldown(spellOrItemName)
+        end
+
+        local spellInfo = self:GetSpellInfo(spellOrItemName)
+        if spellInfo then
+            return ABPI:GetSpellCooldown(spellOrItemName)
+        end
+
+    end
+
     function S:InitializeHooks()
         --- @param userIcon Icon
         --- @param actionID number
@@ -382,24 +429,14 @@ AceEvent:RegisterMessage(GC.M.ABP_MacroAttributeSetter_OnShowTooltip,function(ms
 end)
 
 AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastSucceeded,function(msg, source)
-    p:log(30, 'Received message from [%s]: %s', tostring(source), msg)
-
+    p:log(30, 'MSG[%s]: %s', tostring(source), msg)
     -- todo next: update cooldown
 
     ABPI:UpdateM6Macros(function(bw)
-        local d = bw:GetMacroData()
-        local n = d.name
-        local hint = S:macroHintByMacroName(n); if not hint then return end
-        --p:log('[%s]: hint=%s', n, pformat(hint))
-        if hint.icon then bw:SetIcon(hint.icon) end
-
+        UpdateIconByWidget(bw)
         UpdateStateByWidget(bw)
-
-        --bw:UpdateState()
-        --C_Timer.NewTicker(0.2, function()
-        --    bw:UpdateItemStateByItem(hint.spell)
-        --    -- todo UpdateCooldown()
-        --end, 2)
+        UpdateCooldownByWidget(bw)
+        -- todo next: update cooldown
     end)
 
 end)
@@ -407,24 +444,61 @@ end)
 ---@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
 ---@param updateM6MacrosFn UpdateM6MacrosFn
 AceEvent:RegisterMessage(GC.M.ABP_OnBagUpdateExt,function(msg, source, updateM6MacrosFn)
-    --p:log(30, 'Received message from [%s]: %s', tostring(source), msg)
+    p:log(30, 'MSG[%s]: %s', tostring(source), msg)
     updateM6MacrosFn(function(bw)
         UpdateStateByWidget(bw)
     end)
+end)
+
+--- casting a non GC spell like mage portal
+---@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
+---@param updateM6MacrosFn UpdateM6MacrosFn
+AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastStartExt .. 'OFF',function(msg, source, updateM6MacrosFn)
+    p:log(30, 'MSG[%s]: %s', tostring(source), msg)
+    updateM6MacrosFn(function(bw) UpdateStateByWidget(bw) end)
+end)
+
+--- instant cast spells
+---@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
+---@param updateM6MacrosFn UpdateM6MacrosFn
+AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastSentExt,function(msg, source, updateM6MacrosFn)
+    p:log(30, 'MSG[%s]: %s', tostring(source), msg)
+    updateM6MacrosFn(function(bw)
+        UpdateStateByWidget(bw)
+        UpdateCooldownByWidget(bw)
+        UpdateIconByWidget(bw)
+    end)
+end)
+
+--- i.e. Casting a portal and moving triggers this event
+---@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
+---@param updateM6MacrosFn UpdateM6MacrosFn
+AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastStopExt,function(msg, source, updateM6MacrosFn)
+    p:log(30, 'MSG[%s]: %s', tostring(source), msg)
+    updateM6MacrosFn(function(bw) bw:ResetCooldown() end)
+end)
+
+--- i.e. Conjure mana gem when there is already a mana gem in bag, triggers this event
+---@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
+---@param updateM6MacrosFn UpdateM6MacrosFn
+AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastFailedExt,function(msg, source, updateM6MacrosFn)
+    p:log(0, 'MSG[%s]: %s', tostring(source), msg)
+    updateM6MacrosFn(function(bw) bw:ResetCooldown() end)
 end)
 
 ---@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
 ---@param updateM6MacrosFn UpdateM6MacrosFn
-AceEvent:RegisterMessage(GC.M.ABP_OnButtonPostClickExt,function(msg, source, updateM6MacrosFn)
-    --p:log(30, 'MSG [%s]: %s', tostring(source), msg)
+AceEvent:RegisterMessage(GC.M.ABP_OnButtonPostClickExt .. 'OFF',function(msg, source, updateM6MacrosFn)
+    p:log(30, 'MSG [%s]: %s', tostring(source), msg)
     updateM6MacrosFn(function(bw)
-        local n = bw:GetMacroData().name
-        local hint = S:macroHintByMacroName(n); if not hint then return end
-        if hint.icon then bw:SetIcon(hint.icon) end
+        UpdateIconByWidget(bw)
         UpdateStateByWidget(bw)
+        UpdateCooldownByWidget(bw)
     end)
 end)
 
+-- todo next: update item charges
+-- todo next: update usable
 -- todo next: m6 todo items
 -- bag updates
 -- handle spell and item states: usable, count, charge
