@@ -54,6 +54,11 @@ Notes
 --[[-----------------------------------------------------------------------------
 Support Functions
 -------------------------------------------------------------------------------]]
+---@param text string
+local function fatal(text) return ec:WrapTextInColorCode('<<FATAL>> ') .. text end
+---@param text string
+local function err(text) return ec:WrapTextInColorCode('<<ERROR>> ') .. text end
+
 local function InitializeM6Icons()
     --- Initially, the m6 icons set. The icons are identifiers to slotIDs
     --- Grab the slotID and retrieve the real icons
@@ -130,8 +135,6 @@ local function RemoveInactiveMacros()
         local slotID = S:slotIDByMacroName(n); if not slotID then return end
         if S:IsSlotActive(slotID) then return end
 
-        --local name = M6:GetHint(slotID); if IsNotBlank(name) then return end
-        p:log('InActive macro: %s', n)
         bw:SetButtonAsEmpty()
         bw:SetText(nil)
         return false
@@ -273,11 +276,6 @@ Properties & Methods
 ---@param o M6Support
 local function PropertiesAndMethods(o)
 
-    ---@param text string
-    local function fatal(text) return RED_FONT_COLOR:WrapTextInColorCode('<<FATAL>>: ' .. text) end
-    ---@param text string
-    local function err(text) return RED_FONT_COLOR:WrapTextInColorCode('<<ERROR>>: ' .. text) end
-
     --- @return M6Support_DB
     function o:db() return M6DB end
 
@@ -286,8 +284,7 @@ local function PropertiesAndMethods(o)
         local realm, name = GetNormalizedRealmName(), UnitName("player")
         local pr = self:db().profiles[realm][name]
         if not pr then
-            p:log(fatal('Profile not found for character=[%s] on realm=[%s]:'),
-                    name, realm)
+            p:log(fatal('Profile not found for character=[%s] on realm=[%s]:'), name, realm)
             return nil
         end
 
@@ -478,7 +475,7 @@ local function PropertiesAndMethods(o)
         end)
 
         hooksecurefunc(M6, "DeactivateAction", function(m6API, actionID)
-            p:log(0, 'hooksecurefunc()::DeactivateAction::id: %s', actionID)
+            p:log(30, 'hooksecurefunc()::DeactivateAction::id: %s', actionID)
             H:OnDeactivateAction(actionID)
         end)
 
@@ -502,7 +499,7 @@ Message Callbacks
 AceEvent:RegisterMessage(GC.M.ABP_PLAYER_ENTERING_WORLD,function(msg, source, ...)
     ABPI = ns.LibStubAce(ABP_API_NAME)
     if not ABPI then
-        p:log(0, 'Lib was not available: %s', ABP_API_NAME)
+        p:log(fatal 'Lib was not available: %s', ABP_API_NAME)
         return
     end
     S:InitializeHooks()
@@ -582,7 +579,7 @@ end)
 ---@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
 ---@param updateM6MacrosFn UpdateM6MacrosFn
 AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastFailedExt,function(msg, source, updateM6MacrosFn)
-    p:log(0, 'MSG[%s]: %s', tostring(source), msg)
+    p:log(30, 'MSG[%s]: %s', tostring(source), msg)
     updateM6MacrosFn(function(bw) bw:ResetCooldown() end)
 end)
 
