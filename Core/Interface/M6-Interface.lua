@@ -29,6 +29,8 @@ local M6Support_MacroHint = {
     unknown2 = 0,
     fn = function()  end,
     unknown3 = 0,
+    unknown4 = nil,
+    label = 'Heal Me',
 }
 --- @class M6Support_MacroHint_Extended : M6Support_MacroHint
 local M6Support_MacroHint_Extended = {

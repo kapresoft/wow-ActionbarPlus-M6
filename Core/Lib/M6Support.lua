@@ -10,7 +10,18 @@ local IsBlank, IsNotBlank, StartsWithIgnoreCase = String.IsBlank, String.IsNotBl
 local ABP_API_NAME = 'ActionbarPlus-ActionbarPlusAPI-1.0'
 local M6_DEFAULT_ICON = 10741611000
 local MISSING_ICON = 134400
-local MACRO_M6_FORMAT = ' :: |cffffd000%s|r |cfd5a5a5a(Macro :: %s)|r'
+
+--- @type Kapresoft_LibUtil_ColorDefinition2
+local tooltipColors = {
+    primary   = DARKYELLOW_FONT_COLOR,
+    secondary = HIGHLIGHT_LIGHT_BLUE,
+    tertiary = WHITE_FONT_COLOR
+}
+local c = K_Constants:NewConsoleHelper(tooltipColors)
+local ec = PURE_RED_COLOR
+
+local SEPARATOR = c:T(' :: ')
+local MACRO_M6_FORMAT = SEPARATOR .. c:P('%s')
 
 --- This will be populated later
 --- @type ActionbarPlusAPI
@@ -21,8 +32,8 @@ Temporary Localization
 -------------------------------------------------------------------------------]]
 local L = L or {}
 L['Missing Spell or Item'] = 'Missing Spell or Item'
-L['Inactive'] = 'Inactive'
-
+L['Inactive']              = 'Inactive'
+L['Macro']                 = 'Macro'
 
 local MISSING_SPELL_OR_ITEM = DIM_RED_FONT_COLOR:WrapTextInColorCode(sformat('<<%s>>', L['Missing Spell or Item']))
 local INACTIVE_M6_MACRO = DIM_RED_FONT_COLOR:WrapTextInColorCode(L['Inactive'])
@@ -127,11 +138,53 @@ local function RemoveInactiveMacros()
     end)
 end
 
+---@param actionID number
+local function ActionContentToTooltipText(actionID)
+    local tbl = S:actionAsTable(actionID)
+    local txt = ''
+    if not tbl then return end
+    for i, v in ipairs(tbl) do
+
+        txt = txt .. v .. "\n"
+    end
+    return txt
+end
+
+---@param actionID number
+---@param m6MacroName string
+---@param hint M6Support_MacroHint_Extended
+local function AppendExtendedDetails(actionID, m6MacroName, hint)
+    if InCombatLockdown() or IsShiftKeyDown() ~= true then return end
+    local content = c:P('\n\n' .. ActionContentToTooltipText(actionID))
+    GameTooltip:AppendText(content)
+end
+
+---@param macroName string
+---@param m6MacroName string
+---@param hint M6Support_MacroHint_Extended
+local function AddM6Info(macroName, m6MacroName, hint)
+    local nameRight = ''
+    if IsNotBlank(hint.label) then
+        nameRight = c:S('Name') .. SEPARATOR .. m6MacroName
+    end
+    --local m6MacroLabel = c:S('M6 Macro') .. SEPARATOR .. macroName
+
+    local m6MacroLabel = sformat('%s%s%s', c:S('M6 Macro'), SEPARATOR, macroName)
+    GameTooltip:AddLine(' ')
+    GameTooltip:AddDoubleLine(m6MacroLabel, nameRight)
+end
+
 --- @param w ButtonUIWidget
 local function ShowTooltip(w)
     local md = w:GetMacroData(); if not md then return end
     local m = md.name; if IsBlank(m) then return end
     local slotID = S:slotIDByMacroName(m); if not slotID then return end
+    local actionID = S:profile().slots[slotID]
+    if not actionID then
+        p:log("%s to show tooltip for unknown actionID, slotID=%s macro=%s",
+                ec:WrapTextInColorCode('Failed'), slotID, m)
+        return
+    end
 
     local hint = S:macroHintBySlotID(slotID);
     if not hint then
@@ -140,25 +193,33 @@ local function ShowTooltip(w)
         return
     end
 
-    local m6MacroName, spellName = hint.name, hint.spell
+    local m6MacroName, spellName, displayName = hint.name, hint.spell, hint.name
+
+    if IsNotBlank(hint.label) then displayName = hint.label end
 
     local spell = S:GetSpellInfo(spellName)
     if spell and spell.id then
         GameTooltip:SetSpellByID(spell.id)
-        GameTooltip:AppendText(sformat(MACRO_M6_FORMAT, m6MacroName, m))
+        AddM6Info(m, m6MacroName, hint)
+        GameTooltip:AppendText(MACRO_M6_FORMAT:format(displayName))
+        AppendExtendedDetails(actionID, m6MacroName, hint)
         return
     end
 
     local item = ABPI:GetItemInfo(spellName)
     if item and item.id then
         GameTooltip:SetItemByID(item.id)
-        GameTooltip:AppendText(sformat(MACRO_M6_FORMAT, m6MacroName, m))
+        AddM6Info(m, m6MacroName, hint)
+        GameTooltip:AppendText(MACRO_M6_FORMAT:format(displayName))
+        AppendExtendedDetails(actionID, m6MacroName, hint)
         return
     end
 
     if IsNotBlank(m6MacroName) then
-        GameTooltip:SetText(MISSING_SPELL_OR_ITEM)
-        GameTooltip:AppendText(sformat(MACRO_M6_FORMAT, m6MacroName, m))
+        GameTooltip:SetText(L['Macro'])
+        AddM6Info(m, m6MacroName, hint)
+        GameTooltip:AppendText(MACRO_M6_FORMAT:format(displayName))
+        AppendExtendedDetails(actionID, m6MacroName, hint)
     end
 
 end
@@ -183,13 +244,10 @@ local function EventHandlerPropertiesAndMethods(o)
         local hint = S:macroHintByAction(actionID); if hint == nil then return end
         p:log(30, '[%s::%s]:: hint=%s', hint.name, actionID, pformat(hint))
         local icon, itemCount, macroName = hint.icon, hint.itemCount, hint.macroName
-        if not icon then icon = MISSING_ICON
-        end
+        if not icon then icon = MISSING_ICON end
 
         ABPI:UpdateMacrosByName(macroName, function(bw)
-            p:log(0, 'found[%s]: %s', macroName, bw:GetName())
-            bw:SetIcon(hint.icon)
-
+            bw:SetIcon(icon)
             UpdateStateByWidget(bw)
         end)
 
@@ -215,6 +273,11 @@ Properties & Methods
 ---@param o M6Support
 local function PropertiesAndMethods(o)
 
+    ---@param text string
+    local function fatal(text) return RED_FONT_COLOR:WrapTextInColorCode('<<FATAL>>: ' .. text) end
+    ---@param text string
+    local function err(text) return RED_FONT_COLOR:WrapTextInColorCode('<<ERROR>>: ' .. text) end
+
     --- @return M6Support_DB
     function o:db() return M6DB end
 
@@ -222,7 +285,20 @@ local function PropertiesAndMethods(o)
     function o:profile()
         local realm, name = GetNormalizedRealmName(), UnitName("player")
         local pr = self:db().profiles[realm][name]
-        if pr and pr[1] then return pr[1] end
+        if not pr then
+            p:log(fatal('Profile not found for character=[%s] on realm=[%s]:'),
+                    name, realm)
+            return nil
+        end
+
+        -- 1 = main, 2, 3
+        local specIndex = GetSpecialization()
+        if pr and pr[specIndex] then
+            p:log(5, 'Profile found for specIndex[%s]: %s', tostring(specIndex), pformat(pr[specIndex]))
+            return pr[specIndex]
+        end
+
+        p:log(fatal('Profile not found for specIndex[%s]:'), tostring(specIndex))
         return nil
     end
 
@@ -233,6 +309,11 @@ local function PropertiesAndMethods(o)
         local _, slotID = string.gmatch(macroName, "(%w+)%+(%w+)")()
         return slotID
     end
+
+    ---@param actionID number
+    function o:action(actionID) return M6:GetAction(actionID) end
+    ---@param actionID number
+    function o:actionAsTable(actionID) return { M6:GetAction(actionID) } end
 
     --- @param actionID number
     --- @return string The slotID, i.e. 's01','s02', etc...
@@ -281,12 +362,17 @@ local function PropertiesAndMethods(o)
     --- @return M6Support_MacroHint
     --- @param slotID string The numeric slotID. Returns null if slot is not active.
     function o:macroHintBySlotIDBase(slotID)
-        local m6Name, isActive, _, iconId, spellOrItemName, itemCount = M6:GetHint(slotID)
+        local m6Name, isActive, _, iconId, spellOrItemName,
+            itemCount, unknown1, unknown2, fn, unknown3,
+            unknown4, label = M6:GetHint(slotID)
         if IsBlank(m6Name) then return nil end
         --- @type M6Support_MacroHint
         local ret = {
             name = m6Name, isActive = isActive or false, icon = iconId,
-            spell = spellOrItemName, itemCount = itemCount }
+            spell = spellOrItemName, itemCount = itemCount,
+            unknown1 = unknown1, unknown2 = unknown2, fn=fn,
+            unknown3 = unknown3, unknown4 = unknown4,
+            label = label }
         return ret
     end
 
@@ -342,6 +428,9 @@ local function PropertiesAndMethods(o)
         return false
     end
 
+    ---@param actionID number
+    function o:IsActionValid(actionID) return actionID and M6:IsActionValid(actionID) end
+
     --- @return SpellInfo
     function o:GetSpellInfo(spellNameOrId)
         local name, _, icon, castTime, minRange, maxRange, id = GetSpellInfo(spellNameOrId)
@@ -376,6 +465,8 @@ local function PropertiesAndMethods(o)
     end
 
     function S:InitializeHooks()
+        local profile = self:profile(); if not profile then return nil end
+
         --- @param userIcon Icon
         --- @param actionID number
         hooksecurefunc(M6, "SetActionIcon", function(m6API, actionID, userIcon)
@@ -430,7 +521,6 @@ end)
 
 AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastSucceeded,function(msg, source)
     p:log(30, 'MSG[%s]: %s', tostring(source), msg)
-    -- todo next: update cooldown
 
     ABPI:UpdateM6Macros(function(bw)
         UpdateIconByWidget(bw)
@@ -488,7 +578,7 @@ end)
 
 ---@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
 ---@param updateM6MacrosFn UpdateM6MacrosFn
-AceEvent:RegisterMessage(GC.M.ABP_OnButtonPostClickExt .. 'OFF',function(msg, source, updateM6MacrosFn)
+AceEvent:RegisterMessage(GC.M.ABP_OnButtonPostClickExt,function(msg, source, updateM6MacrosFn)
     p:log(30, 'MSG [%s]: %s', tostring(source), msg)
     updateM6MacrosFn(function(bw)
         UpdateIconByWidget(bw)
@@ -502,3 +592,4 @@ end)
 -- todo next: m6 todo items
 -- bag updates
 -- handle spell and item states: usable, count, charge
+

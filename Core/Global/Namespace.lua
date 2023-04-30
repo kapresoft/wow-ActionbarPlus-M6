@@ -60,7 +60,7 @@ local function CreateNamespace(...)
             local loggerLib = K.Objects.LoggerMixin
             if loggerLib then
                 objInstance.logger = loggerLib:NewLogger(ns.name, GC.C.LOG_LEVEL_VAR , GC.C.COLOR_DEF, subName)
-                objInstance.logger:log(0, 'Logger Applied to: %s', tostring(objInstance.major or subName or ns.name or objInstance))
+                objInstance.logger:log(30, 'Logger Applied to: %s', tostring(objInstance.major or subName or ns.name or objInstance))
                 function objInstance:GetLogger() return self.logger end
             end
             return objInstance
