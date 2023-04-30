@@ -65,16 +65,14 @@ end
 --- @param event string
 local function OnPlayerEnteringWorld(f, event, ...)
     local pp = f.ctx.addon:GetLogger()
-    pp:log('Player entered')
-
     local isLogin, isReload = ...
 
     --@debug@
     isLogin = true
     --@end-debug@
 
-    pp:log('Loaded:: isLogin=%s isReload=%s', isLogin, isReload)
-    pp:log('Log Level[%s]: %s', C.LOG_LEVEL_VAR, GC:GetLogLevel())
+    pp:log(1, 'isLogin=%s isReload=%s', isLogin, isReload)
+    pp:log(1, 'Log Level[%s]: %s', C.LOG_LEVEL_VAR, GC:GetLogLevel())
 
     AceEvent:RegisterMessage("ActionbarPlus::OnMacroAttributesSet", function(msg, widgetFn)
         local w = widgetFn()

@@ -11,11 +11,15 @@ local ABP_API_NAME = 'ActionbarPlus-ActionbarPlusAPI-1.0'
 local M6_DEFAULT_ICON = 10741611000
 local MISSING_ICON = 134400
 
+local primaryFallbackYellow = CreateColorFromHexString('ffFFD200')
+local secondaryFallbackBlue = CreateColorFromHexString('ff668BFF')
+local tertiaryFallbackWhite = CreateColorFromHexString('ffFFFFFF')
+--- Note that some global fonts are not available in classic-era
 --- @type Kapresoft_LibUtil_ColorDefinition2
 local tooltipColors = {
-    primary   = DARKYELLOW_FONT_COLOR,
-    secondary = HIGHLIGHT_LIGHT_BLUE,
-    tertiary = WHITE_FONT_COLOR
+    primary   = DARKYELLOW_FONT_COLOR or YELLOW_FONT_COLOR or primaryFallbackYellow,
+    secondary = HIGHLIGHT_LIGHT_BLUE or BLUE_FONT_COLOR or secondaryFallbackBlue,
+    tertiary = WHITE_FONT_COLOR or tertiaryFallbackWhite
 }
 local c = K_Constants:NewConsoleHelper(tooltipColors)
 local ec = PURE_RED_COLOR
@@ -292,9 +296,11 @@ local function PropertiesAndMethods(o)
         end
 
         -- 1 = main, 2, 3
-        local specIndex = GetSpecialization()
+        local specIndex = (GetSpecialization and GetSpecialization()) or 1
+        p:log(1, 'Profile index=%s for character=%s (%s)', specIndex, name, realm)
         if pr and pr[specIndex] then
-            p:log(5, 'Profile found for specIndex[%s]: %s', tostring(specIndex), pformat(pr[specIndex]))
+            p:log(5, 'Profile found for specIndex[%s] with action slots %s',
+                    tostring(specIndex), pformat(pr[specIndex].slots))
             return pr[specIndex]
         end
 
@@ -465,7 +471,7 @@ local function PropertiesAndMethods(o)
     end
 
     function S:InitializeHooks()
-        local profile = self:profile(); if not profile then return nil end
+        local pr = self:profile(); if not pr then return nil end
 
         --- @param userIcon Icon
         --- @param actionID number
@@ -483,8 +489,16 @@ local function PropertiesAndMethods(o)
         InitializeM6Icons()
     end
 
+    ---@param level number 0 to 100
+    function S:LL(level)
+        if level >= 0 then GC:SetLogLevel(level) end
+        return GC:GetLogLevel()
+    end
+
 end
 PropertiesAndMethods(S)
+
+ABP_M6 = S
 
 --[[-----------------------------------------------------------------------------
 Message Callbacks

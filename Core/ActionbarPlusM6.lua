@@ -20,8 +20,3 @@ frame.ctx = { addon = A }
 frame:SetScript('OnEvent', OnPlayerEnteringWorld)
 frame:RegisterEvent('PLAYER_ENTERING_WORLD')
 
-
---[[-----------------------------------------------------------------------------
-API
--------------------------------------------------------------------------------]]
-ABP_M6 = A
