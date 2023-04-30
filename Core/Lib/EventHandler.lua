@@ -4,12 +4,17 @@ Blizzard Vars
 local RegisterFrameForEvents, RegisterFrameForUnitEvents = FrameUtil.RegisterFrameForEvents, FrameUtil.RegisterFrameForUnitEvents
 
 --[[-----------------------------------------------------------------------------
+Lua Vars
+-------------------------------------------------------------------------------]]
+local sformat = string.format
+
+--[[-----------------------------------------------------------------------------
 Local Vars
 -------------------------------------------------------------------------------]]
 --- @type Namespace
 local ns = select(2, ...)
 local O, AceEvent, GC = ns.O, ns.O.AceLibrary.AceEvent, ns.O.GlobalConstants
-local C = GC.C
+local C, L = GC.C, GC:GetAceLocale()
 
 --[[-----------------------------------------------------------------------------
 Interface
@@ -29,23 +34,23 @@ local _EventContext = {
 }
 
 --- @class EventHandler :BaseObject_WithAceEvent
-local L = ns.LibStub:NewLibrary(ns.M.EventHandler); if not L then return end
-AceEvent:Embed(L)
-local p = L:GetLogger()
+local _L = ns.LibStub:NewLibrary(ns.M.EventHandler); if not _L then return end
+AceEvent:Embed(_L)
+local p = _L:GetLogger()
 
 ---@param addon ActionbarPlusM6
 ---@return EventHandler
-function L:NewEventHandler(addon)
-    return ns:K():CreateAndInitFromMixin(L, addon)
+function _L:NewEventHandler(addon)
+    return ns:K():CreateAndInitFromMixin(_L, addon)
 end
 
 ---@param addon ActionbarPlusM6
-function L:Init(addon)
+function _L:Init(addon)
     self.addon = addon
 end
 
 --- @return EventFrameInterface
-function L:CreateEventFrame()
+function _L:CreateEventFrame()
     local f = CreateFrame("Frame", nil, self.addon.frame)
     f.ctx = self:CreateContext(f)
     return f
@@ -53,7 +58,7 @@ end
 
 --- @param eventFrame _Frame
 --- @return EventContext
-function L:CreateContext(eventFrame)
+function _L:CreateContext(eventFrame)
     local ctx = {
         frame = eventFrame,
         addon = self.addon,
@@ -71,6 +76,7 @@ local function OnPlayerEnteringWorld(f, event, ...)
     isLogin = true
     --@end-debug@
 
+    pp:log(sformat(L['Addon Initialized Text Format V1'], GC:GetAddonInfo()))
     pp:log(1, 'isLogin=%s isReload=%s', isLogin, isReload)
     pp:log(1, 'Log Level[%s]: %s', C.LOG_LEVEL_VAR, GC:GetLogLevel())
 
@@ -82,13 +88,13 @@ local function OnPlayerEnteringWorld(f, event, ...)
 
 end
 
-function L:RegisterPlayerEnteringWorld()
+function _L:RegisterPlayerEnteringWorld()
     local f = self:CreateEventFrame()
     f:SetScript('OnEvent', OnPlayerEnteringWorld)
     RegisterFrameForEvents(f, { 'PLAYER_ENTERING_WORLD' })
 end
 
-function L:RegisterEvents()
+function _L:RegisterEvents()
     p:log(10, 'RegisterEvents called..')
     self:RegisterPlayerEnteringWorld()
 end

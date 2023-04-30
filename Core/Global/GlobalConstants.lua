@@ -39,6 +39,17 @@ Methods: GlobalConstants
 --- @param o GlobalConstants
 local function GlobalConstantProperties(o)
 
+    local SLASH_COMMAND_NAME = 'abpm6'
+    local SLASH_COMMAND = sformat('/' .. SLASH_COMMAND_NAME)
+    local SLASH_COMMAND_HELP = sformat('/%s help', SLASH_COMMAND_NAME)
+
+    --- @type Kapresoft_LibUtil_ColorDefinition
+    local ColorDef = {
+        primary = CreateColorFromHexString('ffB0C2FB'),
+        secondary = CreateColorFromHexString('fffbeb2d'),
+        tertiary = CreateColorFromHexString('ffffffff'),
+    }
+    local h = K_Constants:NewConsoleHelper(ColorDef)
 
     --- @class ConstantNames
     local C = {
@@ -46,12 +57,10 @@ local function GlobalConstantProperties(o)
         DB_NAME = 'ABP_M6_DB',
         LOG_LEVEL_VAR = 'ABP_M6_LOG_LEVEL',
         ADDON_INFO_FMT = '%s|cfdeab676: %s|r',
-        --- @type Kapresoft_LibUtil_ColorDefinition
-        COLOR_DEF = {
-            primary   = '2db9fb',
-            secondary = 'fbeb2d',
-            tertiary = 'ffffff'
-        }
+        COLOR_DEF = ColorDef,
+        SLASH_COMMAND_NAME = SLASH_COMMAND,
+        SLASH_COMMAND      = h:P(SLASH_COMMAND),
+        SLASH_COMMAND_HELP = SLASH_COMMAND_HELP
     }
 
     --- @class EventNames
@@ -98,9 +107,9 @@ local function GlobalConstantMethods(o)
     function o:Constants() return o.C end
     function o:Events() return o.E end
 
-    --[[---#### Example
+    --- #### Example
     ---```
-    ---local version, curseForge, issues, repo, lastUpdate, useKeyDown, wowInterfaceVersion = GC:GetAddonInfo()
+    ---local version, curseForge, issues, repo, lastUpdate, wowInterfaceVersion = GC:GetAddonInfo()
     ---```
     --- @return string, string, string, string, string, string, string
     function o:GetAddonInfo()
@@ -134,7 +143,7 @@ local function GlobalConstantMethods(o)
                 sformat(fmt, C['Last-Update'], lastUpdate),
                 sformat(fmt, C['Interface-Version'], wowInterfaceVersion)
         )
-    end]]
+    end
 
     function o:GetLogLevel() return _G[o.C.LOG_LEVEL_VAR] or 0 end
     --- @param level number The log level between 1 and 100

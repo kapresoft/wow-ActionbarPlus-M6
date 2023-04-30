@@ -6,6 +6,7 @@ local ns = select(2, ...)
 local O, pformat, sformat = ns.O, ns.pformat, string.format
 local GC, AceEvent, String = O.GlobalConstants, O.AceLibrary.AceEvent, O.String
 local IsBlank, IsNotBlank, StartsWithIgnoreCase = String.IsBlank, String.IsNotBlank, String.StartsWithIgnoreCase
+local L = GC:GetAceLocale()
 
 local ABP_API_NAME = 'ActionbarPlus-ActionbarPlusAPI-1.0'
 local M6_DEFAULT_ICON = 10741611000
@@ -34,12 +35,7 @@ local ABPI
 --[[-----------------------------------------------------------------------------
 Temporary Localization
 -------------------------------------------------------------------------------]]
-local L = L or {}
-L['Missing Spell or Item'] = 'Missing Spell or Item'
-L['Inactive']              = 'Inactive'
-L['Macro']                 = 'Macro'
 
-local MISSING_SPELL_OR_ITEM = DIM_RED_FONT_COLOR:WrapTextInColorCode(sformat('<<%s>>', L['Missing Spell or Item']))
 local INACTIVE_M6_MACRO = DIM_RED_FONT_COLOR:WrapTextInColorCode(L['Inactive'])
 
 --[[-----------------------------------------------------------------------------
