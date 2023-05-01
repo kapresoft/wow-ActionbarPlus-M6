@@ -19,7 +19,9 @@ Local Vars
 -------------------------------------------------------------------------------]]
 
 L['Addon Initialized Text Format V1']  = '%s Initialized.'
-L['Addon Initialized Text Format']  = '%s Initialized.  Type %s on the console for available commands.'
-L['Missing Spell or Item']          = true
-L['Inactive']                       = true
-L['Macro']                          = true
+L['Addon Initialized Text Format']     = '%s Initialized.  Type %s on the console for available commands.'
+L['Missing Spell or Item']             = true
+L['Inactive']                          = true
+L['Macro']                             = true
+L['Name']                              = true
+L['Hold SHIFT before hovering for additional details']     = true
