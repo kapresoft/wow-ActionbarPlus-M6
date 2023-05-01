@@ -23,10 +23,12 @@ local tooltipColors = {
     tertiary = WHITE_FONT_COLOR or tertiaryFallbackWhite
 }
 local c = K_Constants:NewConsoleHelper(tooltipColors)
-local ec = PURE_RED_COLOR
+local ec = PURE_RED_COLOR or RED_FONT_COLOR or CreateColorFromHexString('ffFF1919')
+local grayc = COMMON_GRAY_COLOR or GRAY_FONT_COLOR or CreateColorFromHexString('ffA8A8A8')
 
 local SEPARATOR = c:T(' :: ')
 local MACRO_M6_FORMAT = SEPARATOR .. c:P('%s')
+local HOLD_SHIFT_TEXT = grayc:WrapTextInColorCode(L['Hold SHIFT before hovering for additional details'])
 
 --- This will be populated later
 --- @type ActionbarPlusAPI
@@ -147,8 +149,7 @@ local function ActionContentToTooltipText(actionID)
     local txt = ''
     if not tbl then return end
     for i, v in ipairs(tbl) do
-
-        txt = txt .. v .. "\n"
+        if "imptext" ~= v then txt = txt .. v .. "\n" end
     end
     return txt
 end
@@ -167,14 +168,12 @@ end
 ---@param hint M6Support_MacroHint_Extended
 local function AddM6Info(macroName, m6MacroName, hint)
     local nameRight = ''
-    if IsNotBlank(hint.label) then
-        nameRight = c:S('Name') .. SEPARATOR .. m6MacroName
-    end
-    --local m6MacroLabel = c:S('M6 Macro') .. SEPARATOR .. macroName
-
-    local m6MacroLabel = sformat('%s%s%s', c:S('M6 Macro'), SEPARATOR, macroName)
+    if IsNotBlank(hint.label) then nameRight = c:S(L['Name'] .. ': ') .. m6MacroName end
+    local m6MacroLabel = c:S('M6 ' .. L['Macro'] .. ': ') .. macroName
     GameTooltip:AddLine(' ')
     GameTooltip:AddDoubleLine(m6MacroLabel, nameRight)
+    if IsShiftKeyDown() == true or InCombatLockdown() == true then return end
+    GameTooltip:AddLine(HOLD_SHIFT_TEXT)
 end
 
 --- @param w ButtonUIWidget
@@ -287,7 +286,7 @@ local function PropertiesAndMethods(o)
             p:log(fatal("Failed to access M6 database [M6DB]"))
             return nil
         end
-        local realm, name = GetNormalizedRealmName(), UnitName("player")
+        local realm, name = GetRealmName(), UnitName("player")
         local pr = self:db().profiles[realm][name]
         if not pr then
             p:log(fatal('Profile not found for character=[%s] on realm=[%s]:'), name, realm)
