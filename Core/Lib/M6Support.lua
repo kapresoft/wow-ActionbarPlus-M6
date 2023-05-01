@@ -179,6 +179,8 @@ end
 
 --- @param w ButtonUIWidget
 local function ShowTooltip(w)
+    if not S:profile() then return nil end
+
     local md = w:GetMacroData(); if not md then return end
     local m = md.name; if IsBlank(m) then return end
     local slotID = S:slotIDByMacroName(m); if not slotID then return end
@@ -277,10 +279,14 @@ Properties & Methods
 local function PropertiesAndMethods(o)
 
     --- @return M6Support_DB
-    function o:db() return M6DB end
+    function o:db() return _G['M6DB'] end
 
     --- @return M6SupportDBProfile
     function o:profile()
+        if not self:db() then
+            p:log(fatal("Failed to access M6 database [M6DB]"))
+            return nil
+        end
         local realm, name = GetNormalizedRealmName(), UnitName("player")
         local pr = self:db().profiles[realm][name]
         if not pr then
