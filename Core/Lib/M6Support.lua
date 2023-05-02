@@ -99,8 +99,7 @@ local function UpdateIconByWidget(bw)
     if hint.icon then
         C_Timer.After(0.1, function()
             hint = S:macroHintByMacroName(n); if not hint then return end
-            --p:log('icon updated[%s]: %s', hint.spell, hint.icon)
-            bw:SetIcon(hint.icon)
+            if hint.icon ~= nil then bw:SetIcon(hint.icon) end
         end)
     end
 end
