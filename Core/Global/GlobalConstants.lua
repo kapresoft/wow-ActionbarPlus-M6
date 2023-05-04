@@ -75,6 +75,7 @@ local function GlobalConstantProperties(o)
     local Messages = {
         OnAddOnInitialized             = newMsg('OnAddOnInitialized'),
         OnAddOnReady                   = newMsg('OnAddOnReady'),
+        OnSpellUpdateUsable            = newMsg('OnSpellUpdateUsable'),
 
         --- ActionbarPlus Messages
         ABP_PLAYER_ENTERING_WORLD               = newMsgABP('PLAYER_ENTERING_WORLD'),

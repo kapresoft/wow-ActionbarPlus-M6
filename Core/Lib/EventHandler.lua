@@ -88,13 +88,25 @@ local function OnPlayerEnteringWorld(f, event, ...)
 
 end
 
+local function OnSpellEvents(f, event, ...)
+    if 'SPELL_UPDATE_USABLE' == event then
+        AceEvent:SendMessage(GC.M.OnSpellUpdateUsable, 'EventHandler')
+    end
+end
+
 function _L:RegisterPlayerEnteringWorld()
     local f = self:CreateEventFrame()
     f:SetScript('OnEvent', OnPlayerEnteringWorld)
     RegisterFrameForEvents(f, { 'PLAYER_ENTERING_WORLD' })
 end
+function _L:RegisterSpellEvents()
+    local f = self:CreateEventFrame()
+    f:SetScript('OnEvent', OnSpellEvents)
+    RegisterFrameForEvents(f, { 'SPELL_UPDATE_USABLE' })
+end
 
 function _L:RegisterEvents()
     p:log(10, 'RegisterEvents called..')
     self:RegisterPlayerEnteringWorld()
+    self:RegisterSpellEvents()
 end
