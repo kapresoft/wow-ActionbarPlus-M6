@@ -38,14 +38,20 @@ local ABPI
 Temporary Localization
 -------------------------------------------------------------------------------]]
 
-local INACTIVE_M6_MACRO = DIM_RED_FONT_COLOR:WrapTextInColorCode(L['Inactive'])
+local INACTIVE_M6_MACRO = DIM_RED_FONT_COLOR:WrapTextInColorCode(L['Inactive M6 Macro'])
 
 --[[-----------------------------------------------------------------------------
-New Instance
+New Instance: M6Support
 -------------------------------------------------------------------------------]]
 --- @class M6Support : BaseObject_WithAceEvent
 local S = ns:NewObject('M6Support')
 local p = S:GetLogger()
+
+--[[-----------------------------------------------------------------------------
+Event Handler
+-------------------------------------------------------------------------------]]
+--- @class M6_EventHandler
+local H = {}
 
 --[[-----------------------------------------------------------------------------
 Notes
@@ -56,10 +62,57 @@ Notes
 --[[-----------------------------------------------------------------------------
 Support Functions
 -------------------------------------------------------------------------------]]
+local function api() return ns.LibStubAce(ABP_API_NAME) end
+
 ---@param text string
 local function fatal(text) return ec:WrapTextInColorCode('<<FATAL>> ') .. text end
 ---@param text string
 local function err(text) return ec:WrapTextInColorCode('<<ERROR>> ') .. text end
+
+---@param bw ButtonUIWidget
+local function UpdateIconByWidget(bw)
+    local d = bw:GetMacroData()
+    local n = d.name
+    local hint = S:macroHintByMacroName(n); if not hint then return end
+    p:log(30, '[%s]: hint=%s', n, pformat(hint))
+    if hint.icon then
+        C_Timer.After(0.1, function()
+            hint = S:macroHintByMacroName(n); if not hint then return end
+            if hint.icon ~= nil then bw:SetIcon(hint.icon) end
+        end)
+    end
+end
+
+---@param bw ButtonUIWidget
+local function UpdateStateByWidget(bw)
+    local itemInfo = S:itemInfoByMacroName(bw)
+    if not itemInfo then bw:SetText('')
+    else
+        bw:UpdateItemStateByItemInfo(itemInfo)
+    end
+    -- todo next: add spell updates
+end
+
+---@param bw ButtonUIWidget
+local function UpdateCooldownByWidget(bw)
+    local n = bw:GetMacroData().name
+    local hint = S:macroHintByMacroName(n); if not hint then return end
+    p:log(30, 'hint=%s', pformat(hint))
+    if not hint.spell then return end
+
+    C_Timer.After(0.1, function()
+        local cd = S:GetCooldownInfo(hint.spell)
+        p:log(30, 'cd[%s]: spell=%s %s', n, hint.spell, pformat(cd))
+        if cd then bw:SetCooldown(cd.start, cd.duration) end
+    end)
+end
+
+---@param bw ButtonUIWidget
+local function UpdateMacro(bw)
+    UpdateIconByWidget(bw)
+    UpdateStateByWidget(bw)
+    UpdateCooldownByWidget(bw)
+end
 
 local function InitializeM6Icons()
     --- Initially, the m6 icons set. The icons are identifiers to slotIDs
@@ -87,79 +140,25 @@ local function InitializeM6Icons()
                 -- todo UpdateCooldown()
             end, 1)
         end
+
+        UpdateCooldownByWidget(bw)
     end)
-end
-
----@param bw ButtonUIWidget
-local function UpdateIconByWidget(bw)
-    local d = bw:GetMacroData()
-    local n = d.name
-    local hint = S:macroHintByMacroName(n); if not hint then return end
-    p:log(30, '[%s]: hint=%s', n, pformat(hint))
-    if hint.icon then
-        C_Timer.After(0.1, function()
-            hint = S:macroHintByMacroName(n); if not hint then return end
-            if hint.icon ~= nil then bw:SetIcon(hint.icon) end
-        end)
-    end
-end
-
----@param bw ButtonUIWidget
-local function UpdateStateByWidget(bw)
-    local itemInfo = S:itemInfoByMacroName(bw)
-    if not itemInfo then bw:SetText('')
-    else
-        bw:UpdateItemStateByItemInfo(itemInfo)
-
-    end
-    -- todo next: add spell updates
-end
-
----@param bw ButtonUIWidget
-local function UpdateCooldownByWidget(bw)
-    local n = bw:GetMacroData().name
-    local hint = S:macroHintByMacroName(n); if not hint then return end
-    p:log(30, 'hint=%s', pformat(hint))
-    if not hint.spell then return end
-
-    local cd = S:GetCooldownInfo(hint.spell)
-    p:log(30, 'cd[%s]: spell=%s %s', n, hint.spell, pformat(cd))
-    if cd then
-        bw:SetCooldown(cd.start, cd.duration)
-    end
 end
 
 local function RemoveInactiveMacros()
-    ABPI:UpdateMacros(function(bw)
-        local d = bw:GetMacroData()
-        local n = d.name; if not n then return end
-        local slotID = S:slotIDByMacroName(n); if not slotID then return end
-        if S:IsSlotActive(slotID) then return end
+    C_Timer.NewTicker(0.1, function()
+        ABPI:UpdateMacros(function(bw)
+            local d = bw:GetMacroData()
+            local n = d.name; if not n then return end
+            local slotID = S:slotIDByMacroName(n); if not slotID then return end
+            p:log(30, 'slotID[%s] active? %s', tostring(slotID), S:IsSlotActive(slotID))
+            if S:IsSlotActive(slotID) then return end
 
-        bw:SetButtonAsEmpty()
-        bw:SetText(nil)
-        return false
+            bw:SetButtonAsEmpty()
+            bw:SetText(nil)
+            return false
+        end, 3)
     end)
-end
-
----@param actionID number
-local function ActionContentToTooltipText(actionID)
-    local tbl = S:actionAsTable(actionID)
-    local txt = ''
-    if not tbl then return end
-    for i, v in ipairs(tbl) do
-        if "imptext" ~= v then txt = txt .. v .. "\n" end
-    end
-    return txt
-end
-
----@param actionID number
----@param m6MacroName string
----@param hint M6Support_MacroHint_Extended
-local function AppendExtendedDetails(actionID, m6MacroName, hint)
-    if InCombatLockdown() or IsShiftKeyDown() ~= true then return end
-    local content = c:P('\n\n' .. ActionContentToTooltipText(actionID))
-    GameTooltip:AppendText(content)
 end
 
 ---@param macroName string
@@ -172,27 +171,20 @@ local function AddM6Info(macroName, m6MacroName, hint)
     GameTooltip:AddLine(' ')
     GameTooltip:AddDoubleLine(m6MacroLabel, nameRight)
     if IsShiftKeyDown() == true or InCombatLockdown() == true then return end
-    GameTooltip:AddLine(HOLD_SHIFT_TEXT)
 end
 
 --- @param w ButtonUIWidget
 local function ShowTooltip(w)
-    if not S:profile() then return nil end
+    --if not S:profile() then return nil end
 
     local md = w:GetMacroData(); if not md then return end
     local m = md.name; if IsBlank(m) then return end
     local slotID = S:slotIDByMacroName(m); if not slotID then return end
-    local actionID = S:profile().slots[slotID]
-    if not actionID then
-        p:log("%s to show tooltip for unknown actionID, slotID=%s macro=%s",
-                ec:WrapTextInColorCode('Failed'), slotID, m)
-        return
-    end
 
     local hint = S:macroHintBySlotID(slotID);
     if not hint then
         GameTooltip:SetText(INACTIVE_M6_MACRO)
-        GameTooltip:AppendText(sformat(MACRO_M6_FORMAT, '', m))
+        GameTooltip:AppendText(sformat(MACRO_M6_FORMAT, m))
         return
     end
 
@@ -205,7 +197,6 @@ local function ShowTooltip(w)
         GameTooltip:SetSpellByID(spell.id)
         AddM6Info(m, m6MacroName, hint)
         GameTooltip:AppendText(MACRO_M6_FORMAT:format(displayName))
-        AppendExtendedDetails(actionID, m6MacroName, hint)
         return
     end
 
@@ -214,7 +205,6 @@ local function ShowTooltip(w)
         GameTooltip:SetItemByID(item.id)
         AddM6Info(m, m6MacroName, hint)
         GameTooltip:AppendText(MACRO_M6_FORMAT:format(displayName))
-        AppendExtendedDetails(actionID, m6MacroName, hint)
         return
     end
 
@@ -222,88 +212,14 @@ local function ShowTooltip(w)
         GameTooltip:SetText(L['Macro'])
         AddM6Info(m, m6MacroName, hint)
         GameTooltip:AppendText(MACRO_M6_FORMAT:format(displayName))
-        AppendExtendedDetails(actionID, m6MacroName, hint)
     end
 
 end
-
-
 --[[-----------------------------------------------------------------------------
-Event Handler
--------------------------------------------------------------------------------]]
---- @class M6_EventHandler
-local H = {}
----@param o M6_EventHandler
-local function EventHandlerPropertiesAndMethods(o)
-
-    --- Called When an M6 Macro is Saved
-    --- @param userIcon Icon
-    --- @param actionID number
-    function o:OnSetActionIcon(actionID, userIcon)
-        --[[if userIcon then
-            -- todo next: This is an icon set by a user
-        end]]
-
-        local hint = S:macroHintByAction(actionID); if hint == nil then return end
-        p:log(30, '[%s::%s]:: hint=%s', hint.name, actionID, pformat(hint))
-        local icon, itemCount, macroName = hint.icon, hint.itemCount, hint.macroName
-        if not icon then icon = MISSING_ICON end
-
-        ABPI:UpdateMacrosByName(macroName, function(bw)
-            bw:SetIcon(icon)
-            UpdateStateByWidget(bw)
-        end)
-
-        RemoveInactiveMacros()
-
-    end
-
-    --- @param actionID number
-    function o:OnDeactivateAction(actionID)
-        local active = S:IsActionActive(actionID)
-        p:log('OnDeactivate: %s isActive=%s', actionID, active)
-        if active == true then return end
-
-        RemoveInactiveMacros()
-    end
-
-end
-EventHandlerPropertiesAndMethods(H)
-
---[[-----------------------------------------------------------------------------
-Properties & Methods
+M6 Support: Properties & Methods
 -------------------------------------------------------------------------------]]
 ---@param o M6Support
 local function PropertiesAndMethods(o)
-
-    --- @return M6Support_DB
-    function o:db() return _G['M6DB'] end
-
-    --- @return M6SupportDBProfile
-    function o:profile()
-        if not self:db() then
-            p:log(fatal("Failed to access M6 database [M6DB]"))
-            return nil
-        end
-        local realm, name = GetRealmName(), UnitName("player")
-        local pr = self:db().profiles[realm][name]
-        if not pr then
-            p:log(fatal('Profile not found for character=[%s] on realm=[%s]:'), name, realm)
-            return nil
-        end
-
-        -- 1 = main, 2, 3
-        local specIndex = (GetSpecialization and GetSpecialization()) or 1
-        p:log(1, 'Profile index=%s for character=%s (%s)', specIndex, name, realm)
-        if pr and pr[specIndex] then
-            p:log(5, 'Profile found for specIndex[%s] with action slots %s',
-                    tostring(specIndex), pformat(pr[specIndex].slots))
-            return pr[specIndex]
-        end
-
-        p:log(fatal('Profile not found for specIndex[%s]:'), tostring(specIndex))
-        return nil
-    end
 
     --- @param macroName string The macro name i.e '_M6+s01'
     --- @return string The slotId, i.e. 's01' from '_M6+s01'
@@ -311,32 +227,6 @@ local function PropertiesAndMethods(o)
         if IsBlank(macroName) or StartsWithIgnoreCase(macroName, "_m6") ~= true then return nil end
         local _, slotID = string.gmatch(macroName, "(%w+)%+(%w+)")()
         return slotID
-    end
-
-    ---@param actionID number
-    function o:action(actionID) return M6:GetAction(actionID) end
-    ---@param actionID number
-    function o:actionAsTable(actionID) return { M6:GetAction(actionID) } end
-
-    --- @param actionID number
-    --- @return string The slotID, i.e. 's01','s02', etc...
-    function o:slotIDByAction(actionID)
-        if not actionID then return nil end
-        local slots = self:profile().slots
-        if type(slots) ~= 'table' then return end
-        for slotID, aID in pairs(slots) do
-            --- Inactive slotIDs will not be in the list
-            if aID == actionID then return slotID end
-        end
-        return nil
-    end
-
-    ---@param actionID number
-    ---@return string The macro name, i.e. '_M6+s01'
-    function o:macroNameByAction(actionID)
-        if not actionID then return nil end
-        local slotID = self:slotIDByAction(actionID); if not slotID then return nil end
-        return ("_M6+%s"):format(slotID)
     end
 
     ---@param slotID number
@@ -354,20 +244,13 @@ local function PropertiesAndMethods(o)
         return h.icon
     end
 
-    --- @param actionID number
-    --- @return M6Support_MacroHint_Extended
-    function o:macroHintByAction(actionID)
-        local slotID = self:slotIDByAction(actionID)
-        return self:macroHintBySlotID(slotID)
-    end
-
     --- @see M6::Core.lua::GetHint(slotID)
     --- @return M6Support_MacroHint
     --- @param slotID string The numeric slotID. Returns null if slot is not active.
     function o:macroHintBySlotIDBase(slotID)
         local m6Name, isActive, _, iconId, spellOrItemName,
-            itemCount, unknown1, unknown2, fn, unknown3,
-            unknown4, label = M6:GetHint(slotID)
+        itemCount, unknown1, unknown2, fn, unknown3,
+        unknown4, label = M6:GetHint(slotID)
         if IsBlank(m6Name) then return nil end
         --- @type M6Support_MacroHint
         local ret = {
@@ -425,15 +308,6 @@ local function PropertiesAndMethods(o)
     --- @return string The slotID
     function o:slotIDFromIcon(icon) return M6:GetIconKey(icon) end
 
-    ---@param actionID number
-    function o:IsActionActive(actionID)
-        if actionID then return M6:IsActionActivated(actionID) end
-        return false
-    end
-
-    ---@param actionID number
-    function o:IsActionValid(actionID) return actionID and M6:IsActionValid(actionID) end
-
     --- @return SpellInfo
     function o:GetSpellInfo(spellNameOrId)
         local name, _, icon, castTime, minRange, maxRange, id = GetSpellInfo(spellNameOrId)
@@ -467,140 +341,152 @@ local function PropertiesAndMethods(o)
 
     end
 
-    function S:InitializeHooks()
-        local pr = self:profile(); if not pr then return nil end
-
-        --- @param userIcon Icon
-        --- @param actionID number
-        hooksecurefunc(M6, "SetActionIcon", function(m6API, actionID, userIcon)
-            p:log(30, 'hooksecurefunc()::SetAction::id: %s', actionID);
-            if not actionID then return end
-            H:OnSetActionIcon(actionID, userIcon)
-        end)
-
-        hooksecurefunc(M6, "DeactivateAction", function(m6API, actionID)
-            p:log(30, 'hooksecurefunc()::DeactivateAction::id: %s', actionID)
-            H:OnDeactivateAction(actionID)
-        end)
-
-        InitializeM6Icons()
-    end
-
     ---@param level number 0 to 100
     function S:LL(level)
         if level >= 0 then GC:SetLogLevel(level) end
         return GC:GetLogLevel()
     end
 
-end
-PropertiesAndMethods(S)
+    function S:InitializeHooks()
+        hooksecurefunc(M6UI, "Hide", H.OnM6EditFrameHide)
+        InitializeM6Icons()
+    end
 
-ABP_M6 = S
+    function S:RegisterCallbacks()
+        AceEvent:RegisterMessage(GC.M.OnSpellUpdateUsable, H.OnSpellUpdateUsable)
+        AceEvent:RegisterMessage(GC.M.ABP_MacroAttributeSetter_OnSetIcon, H.OnSetIcon)
+        AceEvent:RegisterMessage(GC.M.ABP_MacroAttributeSetter_OnShowTooltip, H.OnShowTooltip)
+        AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastSucceeded, H.OnSpellCastSucceeded)
+        AceEvent:RegisterMessage(GC.M.ABP_OnBagUpdateExt, H.OnBagUpdate)
+        AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastSentExt, H.OnSpellCastSent)
+        AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastStopExt, H.OnSpellCastStop)
+        AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastFailedExt, H.OnSpellCastFailed)
+        AceEvent:RegisterMessage(GC.M.ABP_OnButtonPostClickExt, H.OnPostClick)
+    end
+
+end
+
+
+--[[-----------------------------------------------------------------------------
+Event Handler: Properties & Methods
+-------------------------------------------------------------------------------]]
+---@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
+---@alias WidgetSupplierFn fun() : ButtonUIWidget
+
+---@param o M6_EventHandler
+local function EventHandlerPropertiesAndMethods(o)
+
+    function o.OnM6EditFrameHide()
+        ABPI:UpdateM6Macros(UpdateMacro)
+        RemoveInactiveMacros()
+    end
+
+    ---@param msg string
+    ---@param source string
+    ---@param fn WidgetSupplierFn
+    function o.OnShowTooltip(msg, source, fn)
+        local widget = fn()
+        ShowTooltip(widget)
+    end
+
+    ---@param msg string
+    ---@param source string
+    ---@param fn WidgetSupplierFn
+    function o.OnSetIcon(msg, source, fn)
+        local bw = fn()
+        local icon = S:iconByIconKey(bw:GetIcon())
+        local d = bw:GetMacroData()
+        if icon and icon < M6_DEFAULT_ICON then d.icon2 = icon end
+
+        if not icon then icon = d.icon2 end
+        if not icon then icon = MISSING_ICON end
+        bw:SetIcon(icon)
+
+        UpdateStateByWidget(bw)
+    end
+
+    ---@param msg string
+    ---@param source string
+    ---@param updateM6MacrosFn UpdateM6MacrosFn
+    function o.OnBagUpdate(msg, source, updateM6MacrosFn)
+        p:log(30, 'MSG[%s]: %s', tostring(source), msg)
+        updateM6MacrosFn(UpdateStateByWidget)
+    end
+
+    --- ### Which events?
+    --- - qsequence needs icon updates even if action failed
+    ---@param msg string
+    ---@param source string
+    ---@param updateM6MacrosFn UpdateM6MacrosFn
+    function o.OnPostClick(msg, source, updateM6MacrosFn)
+        p:log(30, 'MSG [%s]: %s', tostring(source), msg)
+        updateM6MacrosFn(UpdateMacro)
+    end
+
+    --- ### Which events?
+    ---  - Instant cast spells (failed or succeeded)
+    ---@param msg string
+    ---@param source string
+    ---@param updateM6MacrosFn UpdateM6MacrosFn
+    function o.OnSpellCastSent(msg, source, updateM6MacrosFn)
+        p:log(30, 'MSG[%s]: %s', tostring(source), msg)
+        updateM6MacrosFn(UpdateMacro)
+    end
+
+    ---@param msg string
+    ---@param source string
+    ---@param updateM6MacrosFn UpdateM6MacrosFn
+    function o.OnSpellCastSucceeded(msg, source)
+        p:log(30, 'MSG[%s]: %s', tostring(source), msg)
+        ABPI:UpdateM6Macros(UpdateMacro)
+    end
+
+    --- ### Which events?
+    ---  - Conjure mana gem when there is already a mana gem in bag
+    ---  - Moving while eating/drinking
+    ---@param msg string
+    ---@param source string
+    ---@param updateM6MacrosFn UpdateM6MacrosFn
+    function o.OnSpellCastFailed(msg, source, updateM6MacrosFn)
+        p:log(30, 'MSG[%s]: %s', tostring(source), msg)
+        updateM6MacrosFn(function(bw) bw:ResetCooldown() end)
+    end
+
+    --- ### Which events?
+    ---  - Casting a portal then moving before cast completed
+    ---@param msg string
+    ---@param source string
+    ---@param updateM6MacrosFn UpdateM6MacrosFn
+    function o.OnSpellCastStop(msg, source, updateM6MacrosFn)
+        p:log(30, 'MSG[%s]: %s', tostring(source), msg)
+        updateM6MacrosFn(function(bw)
+            UpdateCooldownByWidget(bw)
+        end)
+    end
+
+    --- Only triggers when energy/mana is not full
+    ---@param msg string
+    ---@param source string
+    function o.OnSpellUpdateUsable(msg, source) ABPI:UpdateM6Macros(UpdateMacro) end
+
+end
+
+PropertiesAndMethods(S)
+EventHandlerPropertiesAndMethods(H)
 
 --[[-----------------------------------------------------------------------------
 Message Callbacks
 -------------------------------------------------------------------------------]]
 AceEvent:RegisterMessage(GC.M.ABP_PLAYER_ENTERING_WORLD,function(msg, source, ...)
-    ABPI = ns.LibStubAce(ABP_API_NAME)
+    ABPI = api()
     if not ABPI then
         p:log(fatal 'Lib was not available: %s', ABP_API_NAME)
         return
     end
+
     S:InitializeHooks()
-
-end)
-
-AceEvent:RegisterMessage(GC.M.ABP_MacroAttributeSetter_OnSetIcon,function(msg, source, fn)
-    --- @type ButtonUIWidget
-    local bw = fn()
-    local icon = S:iconByIconKey(bw:GetIcon())
-    local d = bw:GetMacroData()
-    if icon and icon < M6_DEFAULT_ICON then d.icon2 = icon end
-
-    if not icon then icon = d.icon2 end
-    if not icon then icon = MISSING_ICON end
-    bw:SetIcon(icon)
-
-    UpdateStateByWidget(bw)
-end)
-AceEvent:RegisterMessage(GC.M.ABP_MacroAttributeSetter_OnShowTooltip,function(msg, source, fn)
-    --p:log(30, 'Received message from [%s]: %s', tostring(source), msg)
-    --- @type ButtonUIWidget
-    local widget = fn()
-    ShowTooltip(widget)
-end)
-
-AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastSucceeded,function(msg, source)
-    p:log(30, 'MSG[%s]: %s', tostring(source), msg)
-
-    ABPI:UpdateM6Macros(function(bw)
-        UpdateIconByWidget(bw)
-        UpdateStateByWidget(bw)
-        UpdateCooldownByWidget(bw)
-        -- todo next: update cooldown
-    end)
-
-end)
-
----@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
----@param updateM6MacrosFn UpdateM6MacrosFn
-AceEvent:RegisterMessage(GC.M.ABP_OnBagUpdateExt,function(msg, source, updateM6MacrosFn)
-    p:log(30, 'MSG[%s]: %s', tostring(source), msg)
-    updateM6MacrosFn(function(bw)
-        UpdateStateByWidget(bw)
-    end)
-end)
-
---- casting a non GC spell like mage portal
----@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
----@param updateM6MacrosFn UpdateM6MacrosFn
-AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastStartExt .. 'OFF',function(msg, source, updateM6MacrosFn)
-    p:log(30, 'MSG[%s]: %s', tostring(source), msg)
-    updateM6MacrosFn(function(bw) UpdateStateByWidget(bw) end)
-end)
-
---- instant cast spells
----@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
----@param updateM6MacrosFn UpdateM6MacrosFn
-AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastSentExt,function(msg, source, updateM6MacrosFn)
-    p:log(30, 'MSG[%s]: %s', tostring(source), msg)
-    updateM6MacrosFn(function(bw)
-        UpdateStateByWidget(bw)
-        UpdateCooldownByWidget(bw)
-        UpdateIconByWidget(bw)
-    end)
-end)
-
---- i.e. Casting a portal and moving triggers this event
----@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
----@param updateM6MacrosFn UpdateM6MacrosFn
-AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastStopExt,function(msg, source, updateM6MacrosFn)
-    p:log(30, 'MSG[%s]: %s', tostring(source), msg)
-    updateM6MacrosFn(function(bw) bw:ResetCooldown() end)
-end)
-
---- i.e. Conjure mana gem when there is already a mana gem in bag, triggers this event
----@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
----@param updateM6MacrosFn UpdateM6MacrosFn
-AceEvent:RegisterMessage(GC.M.ABP_OnSpellCastFailedExt,function(msg, source, updateM6MacrosFn)
-    p:log(30, 'MSG[%s]: %s', tostring(source), msg)
-    updateM6MacrosFn(function(bw) bw:ResetCooldown() end)
-end)
-
----@alias UpdateM6MacrosFn fun(handlerFn:ButtonHandlerFunction) | "function(btnWidget) print(btnWidget:GetName()) end"
----@param updateM6MacrosFn UpdateM6MacrosFn
-AceEvent:RegisterMessage(GC.M.ABP_OnButtonPostClickExt,function(msg, source, updateM6MacrosFn)
-    p:log(30, 'MSG [%s]: %s', tostring(source), msg)
-    updateM6MacrosFn(function(bw)
-        UpdateIconByWidget(bw)
-        UpdateStateByWidget(bw)
-        UpdateCooldownByWidget(bw)
-    end)
+    S:RegisterCallbacks()
 end)
 
 -- todo next: update item charges
 -- todo next: update usable
--- todo next: m6 todo items
--- bag updates
--- handle spell and item states: usable, count, charge
-
