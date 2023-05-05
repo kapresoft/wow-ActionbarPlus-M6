@@ -4,6 +4,7 @@
 ## Notes: This add-on enables |cff1784d1M6|r for Actionbar|cff1784d1Plus|r
 ## Author: kapresoft@gmail.com
 ## SavedVariables: ABP_M6_DB, ABP_M6_LOG_LEVEL
+## IconTexture: Interface/AddOns/ActionbarPlus-M6/Core/Assets/Textures/ActionbarPlus-64xe.tga
 
 # See: https://wowpedia.fandom.com/wiki/TOC_format
 ## RequiredDeps: ActionbarPlus, M6
