@@ -14,7 +14,8 @@ Local Vars
 --- @type Namespace
 local ns = select(2, ...)
 local O, AceEvent, GC = ns.O, ns.O.AceLibrary.AceEvent, ns.O.GlobalConstants
-local C, L = GC.C, GC:GetAceLocale()
+local C, L, E = GC.C, GC:GetAceLocale(), GC.E
+local IsAnyOf = O.String.IsAnyOf
 
 --[[-----------------------------------------------------------------------------
 Interface
@@ -89,7 +90,7 @@ local function OnPlayerEnteringWorld(f, event, ...)
 end
 
 local function OnSpellEvents(f, event, ...)
-    if 'SPELL_UPDATE_USABLE' == event then
+    if IsAnyOf(event, E.SPELL_UPDATE_USABLE, E.MODIFIER_STATE_CHANGED) then
         AceEvent:SendMessage(GC.M.OnSpellUpdateUsable, 'EventHandler')
     end
 end
@@ -101,8 +102,8 @@ function _L:RegisterPlayerEnteringWorld()
 end
 function _L:RegisterSpellEvents()
     local f = self:CreateEventFrame()
-    f:SetScript('OnEvent', OnSpellEvents)
-    RegisterFrameForEvents(f, { 'SPELL_UPDATE_USABLE' })
+    f:SetScript(E.OnEvent, OnSpellEvents)
+    RegisterFrameForEvents(f, { E.SPELL_UPDATE_USABLE, E.MODIFIER_STATE_CHANGED })
 end
 
 function _L:RegisterEvents()
