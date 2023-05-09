@@ -66,6 +66,9 @@ local function GlobalConstantProperties(o)
     --- @class EventNames
     local Events = {
         OnEnter = 'OnEnter',
+        OnEvent = 'OnEvent',
+        SPELL_UPDATE_USABLE = 'SPELL_UPDATE_USABLE',
+        MODIFIER_STATE_CHANGED = 'MODIFIER_STATE_CHANGED',
     }
 
     local function newMsg(msg) return sformat("%s::%s", addon, msg) end
