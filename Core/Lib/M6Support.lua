@@ -70,48 +70,51 @@ local function fatal(text) return ec:WrapTextInColorCode('<<FATAL>> ') .. text e
 local function err(text) return ec:WrapTextInColorCode('<<ERROR>> ') .. text end
 
 ---@param bw ButtonUIWidget
-local function UpdateIconByWidget(bw)
-    local d = bw:GetMacroData()
-    local n = d.name
-    local hint = S:macroHintByMacroName(n); if not hint then return end
-    p:log(30, '[%s]: hint=%s', n, pformat(hint))
-    if hint.icon then
-        C_Timer.After(0.1, function()
-            hint = S:macroHintByMacroName(n); if not hint then return end
-            if hint.icon ~= nil then bw:SetIcon(hint.icon) end
-        end)
-    end
+local function GetHint(bw) return S:macroHintByMacroName(bw:GetMacroData().name) end
+---@alias HintFn fun(bw:ButtonUIWidget, optionalHint: M6Support_MacroHint_Extended, ) | "function(bw, hint) print('hello') end"
+---@param bw ButtonUIWidget
+---@param hintFn HintFn
+local function IfHint(bw, hintFn)
+    local hint = GetHint(bw); if not hint then return end
+    hintFn(hint)
 end
 
 ---@param bw ButtonUIWidget
-local function UpdateStateByWidget(bw)
+local function UpdateIconByWidget(bw)
+    if bw:IsEmpty() then return end
+    IfHint(bw, function(hint)
+        if hint.icon == nil then return end
+        bw:SetIcon(hint.icon)
+    end)
+end
+
+---@param bw ButtonUIWidget
+local function UpdateMacroDisplayName(bw)
+    if bw.SetNameText == nil then return end
+    IfHint(bw, function(hint) bw:SetNameText(hint.label) end)
+end
+
+---@param bw ButtonUIWidget
+local function UpdateItemStateByWidget(bw)
     local itemInfo = S:itemInfoByMacroName(bw)
     if not itemInfo then bw:SetText('')
-    else
-        bw:UpdateItemStateByItemInfo(itemInfo)
-    end
-    -- todo next: add spell updates
+    else bw:UpdateItemStateByItemInfo(itemInfo) end
 end
 
 ---@param bw ButtonUIWidget
 local function UpdateCooldownByWidget(bw)
-    local n = bw:GetMacroData().name
-    local hint = S:macroHintByMacroName(n); if not hint then return end
-    p:log(30, 'hint=%s', pformat(hint))
-    if not hint.spell then return end
-
-    C_Timer.After(0.1, function()
-        local cd = S:GetCooldownInfo(hint.spell)
-        p:log(30, 'cd[%s]: spell=%s %s', n, hint.spell, pformat(cd))
-        if cd then bw:SetCooldown(cd.start, cd.duration) end
+    IfHint(bw, function(hint)
+        local cd = S:GetCooldownInfo(hint.spell); if not cd then return end
+        bw:SetCooldown(cd.start, cd.duration)
     end)
 end
 
 ---@param bw ButtonUIWidget
 local function UpdateMacro(bw)
     UpdateIconByWidget(bw)
-    UpdateStateByWidget(bw)
+    UpdateItemStateByWidget(bw)
     UpdateCooldownByWidget(bw)
+    UpdateMacroDisplayName(bw)
 end
 
 local function InitializeM6Icons()
@@ -123,10 +126,12 @@ local function InitializeM6Icons()
         local slotID = S:slotIDFromIcon(m6Icon)
         local icon
         local spell
+        local label
         if slotID then
             local hint = S:macroHintBySlotID(slotID)
             if hint then
                 icon, spell = hint.icon or d.icon2, hint.spell
+                label = hint.label
             elseif d.icon2 then
                 icon = d.icon2
             end
@@ -136,11 +141,12 @@ local function InitializeM6Icons()
         if spell then
             C_Timer.NewTicker(0.2, function()
                 bw:UpdateItemStateByItem(spell)
-                -- todo UpdateText
-                -- todo UpdateCooldown()
             end, 1)
         end
-
+        if bw.SetNameText and IsNotBlank(label) then
+            C_Timer.NewTicker(.2, function() bw:SetNameText(label) end, 3)
+        end
+        UpdateMacroDisplayName(bw)
         UpdateCooldownByWidget(bw)
     end)
 end
@@ -402,7 +408,9 @@ local function EventHandlerPropertiesAndMethods(o)
         if not icon then icon = MISSING_ICON end
         bw:SetIcon(icon)
 
-        UpdateStateByWidget(bw)
+        UpdateItemStateByWidget(bw)
+        C_Timer.NewTicker(0.1, function()
+            UpdateMacroDisplayName(bw) end, 3)
     end
 
     ---@param msg string
@@ -410,7 +418,7 @@ local function EventHandlerPropertiesAndMethods(o)
     ---@param updateM6MacrosFn UpdateM6MacrosFn
     function o.OnBagUpdate(msg, source, updateM6MacrosFn)
         p:log(30, 'MSG[%s]: %s', tostring(source), msg)
-        updateM6MacrosFn(UpdateStateByWidget)
+        updateM6MacrosFn(UpdateItemStateByWidget)
     end
 
     --- ### Which events?
@@ -459,9 +467,7 @@ local function EventHandlerPropertiesAndMethods(o)
     ---@param updateM6MacrosFn UpdateM6MacrosFn
     function o.OnSpellCastStop(msg, source, updateM6MacrosFn)
         p:log(30, 'MSG[%s]: %s', tostring(source), msg)
-        updateM6MacrosFn(function(bw)
-            UpdateCooldownByWidget(bw)
-        end)
+        updateM6MacrosFn(UpdateCooldownByWidget)
     end
 
     --- Only triggers when energy/mana is not full
