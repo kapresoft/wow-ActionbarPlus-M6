@@ -84,7 +84,6 @@ local function OnPlayerEnteringWorld(f, event, ...)
     AceEvent:RegisterMessage("ActionbarPlus::OnMacroAttributesSet", function(msg, widgetFn)
         local w = widgetFn()
         local macroData = w:GetMacroData()
-        p:log(30, 'Msg[%s] received %s %s', msg, macroData.name, GetTime())
     end)
 
 end
@@ -107,7 +106,6 @@ function _L:RegisterSpellEvents()
 end
 
 function _L:RegisterEvents()
-    p:log(10, 'RegisterEvents called..')
     self:RegisterPlayerEnteringWorld()
     self:RegisterSpellEvents()
 end

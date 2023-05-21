@@ -24,4 +24,3 @@ L['Missing Spell or Item']             = true
 L['Inactive M6 Macro']                 = true
 L['Macro']                             = true
 L['Name']                              = true
-L['Hold SHIFT before hovering for additional details']     = true

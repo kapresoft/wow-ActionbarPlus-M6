@@ -28,7 +28,6 @@ local grayc = COMMON_GRAY_COLOR or GRAY_FONT_COLOR or CreateColorFromHexString('
 
 local SEPARATOR = c:T(' :: ')
 local MACRO_M6_FORMAT = SEPARATOR .. c:P('%s')
-local HOLD_SHIFT_TEXT = grayc:WrapTextInColorCode(L['Hold SHIFT before hovering for additional details'])
 
 --- This will be populated later
 --- @type ActionbarPlusAPI
@@ -157,7 +156,6 @@ local function RemoveInactiveMacros()
             local d = bw:GetMacroData()
             local n = d.name; if not n then return end
             local slotID = S:slotIDByMacroName(n); if not slotID then return end
-            p:log(30, 'slotID[%s] active? %s', tostring(slotID), S:IsSlotActive(slotID))
             if S:IsSlotActive(slotID) then return end
 
             bw:SetButtonAsEmpty()
@@ -181,8 +179,6 @@ end
 
 --- @param w ButtonUIWidget
 local function ShowTooltip(w)
-    --if not S:profile() then return nil end
-
     local md = w:GetMacroData(); if not md then return end
     local m = md.name; if IsBlank(m) then return end
     local slotID = S:slotIDByMacroName(m); if not slotID then return end
