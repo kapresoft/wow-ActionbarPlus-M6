@@ -60,6 +60,8 @@ local function ButtonUIWidget_Methods(o)
     function o:GetItemData() end
     --- @return Profile_Macro
     function o:GetMacroData() end
+    --- @return string
+    function o:GetMacroName() end
 
     --- @return string
     function o:GetName() end
@@ -70,6 +72,15 @@ local function ButtonUIWidget_Methods(o)
     function o:UpdateItemStateByItem(itemIDOrName) end
     ---@param itemInfo ItemInfo
     function o:UpdateItemStateByItemInfo(itemInfo) end
+
+    ---@param item ItemID_Link_Or_Name
+    function o:IsUsableItem(item) end
+
+    --- @param isUsable boolean
+    function o:SetActionUsable(isUsable) end
+
+    --- @param text string
+    function o:SetText(text) end
 
 end
 ButtonUIWidget_Methods(ButtonUIWidget)
@@ -104,23 +115,6 @@ local Profile_Macro = {
     -- This macro is used by third-party plugins
     ["icon2"] = 132093,
     ["body"] = "/lol\n",
-}
-
---- @class ItemInfo
-local ItemInfo = {
-    id = 1,
-    name = 'item name',
-    link = 'item link',
-    icon = 1,
-    quality = 1,
-    level = 1,
-    minLevel = 1,
-    type = 'type',
-    subType = 'subType',
-    stackCount = 1,
-    count = 1,
-    equipLoc='loc', classID=1, subclassID=1, bindType=1,
-    isCraftingReagent = false,
 }
 
 --- @class CooldownInfo

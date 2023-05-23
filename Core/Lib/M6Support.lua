@@ -89,15 +89,20 @@ end
 
 ---@param bw ButtonUIWidget
 local function UpdateMacroDisplayName(bw)
-    if bw.SetNameText == nil then return end
     IfHint(bw, function(hint) bw:SetNameText(hint.label) end)
 end
 
 ---@param bw ButtonUIWidget
 local function UpdateItemStateByWidget(bw)
     local itemInfo = S:itemInfoByMacroName(bw)
-    if not itemInfo then bw:SetText('')
-    else bw:UpdateItemStateByItemInfo(itemInfo) end
+    local usableItem = false
+    if not itemInfo then
+        bw:SetText('')
+    else
+        bw:UpdateItemStateByItemInfo(itemInfo)
+        usableItem = bw:IsUsableItem(itemInfo.id)
+    end
+    bw:SetActionUsable(usableItem)
 end
 
 ---@param bw ButtonUIWidget
@@ -142,7 +147,7 @@ local function InitializeM6Icons()
                 bw:UpdateItemStateByItem(spell)
             end, 1)
         end
-        if bw.SetNameText and IsNotBlank(label) then
+        if IsNotBlank(label) then
             C_Timer.NewTicker(.2, function() bw:SetNameText(label) end, 3)
         end
         UpdateMacroDisplayName(bw)
@@ -322,7 +327,7 @@ local function PropertiesAndMethods(o)
 
     ---@param bw ButtonUIWidget
     function o:itemInfoByMacroName(bw)
-        local n = bw:GetMacroData().name
+        local n = bw:GetMacroName()
         local hint = S:macroHintByMacroName(n); if not hint then return end
         return ABPI:GetItemInfo(hint.spell)
     end
