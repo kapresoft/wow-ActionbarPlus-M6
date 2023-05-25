@@ -94,14 +94,12 @@ end
 
 ---@param bw ButtonUIWidget
 local function UpdateItemStateByWidget(bw)
-    local itemInfo = S:itemInfoByMacroName(bw)
     local usableItem = false
-    if not itemInfo then
-        bw:SetText('')
-    else
-        bw:UpdateItemStateByItemInfo(itemInfo)
-        usableItem = bw:IsUsableItem(itemInfo.id)
-    end
+    local itemInfo = S:itemInfoByMacroName(bw)
+    if not itemInfo then bw:SetText(''); return end
+
+    bw:UpdateItemStateByItemInfo(itemInfo)
+    usableItem = bw:IsUsableItem(itemInfo.id)
     bw:SetActionUsable(usableItem)
 end
 
