@@ -89,7 +89,10 @@ end
 
 ---@param bw ButtonUIWidget
 local function UpdateMacroDisplayName(bw)
-    IfHint(bw, function(hint) bw:SetNameText(hint.label) end)
+    IfHint(bw, function(hint)
+        bw:SetNameText(hint.label)
+        if bw.UpdateSpellCharges then bw:UpdateSpellCharges(hint.spell) end
+    end)
 end
 
 ---@param bw ButtonUIWidget
@@ -106,6 +109,7 @@ end
 ---@param bw ButtonUIWidget
 local function UpdateCooldownByWidget(bw)
     IfHint(bw, function(hint)
+        if bw.UpdateSpellCharges then bw:UpdateSpellCharges(hint.spell) end
         local cd = S:GetCooldownInfo(hint.spell); if not cd then return end
         bw:SetCooldown(cd.start, cd.duration)
     end)
@@ -143,6 +147,7 @@ local function InitializeM6Icons()
         if spell then
             C_Timer.NewTicker(0.2, function()
                 bw:UpdateItemStateByItem(spell)
+                if bw.UpdateSpellCharges then bw:UpdateSpellCharges(spell) end
             end, 1)
         end
         if IsNotBlank(label) then
