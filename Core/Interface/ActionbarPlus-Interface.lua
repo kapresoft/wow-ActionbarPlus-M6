@@ -80,7 +80,13 @@ local function ButtonUIWidget_Methods(o)
     function o:SetActionUsable(isUsable) end
 
     --- @param text string
+    function o:SetNameText(text) end
+
+    --- @param text string
     function o:SetText(text) end
+
+    --- @param spellName SpellName
+    function o:UpdateSpellCharges(spellName) end
 
 end
 ButtonUIWidget_Methods(ButtonUIWidget)
