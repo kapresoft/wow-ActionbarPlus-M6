@@ -1,4 +1,4 @@
-## Interface: 30401
+## Interface: 30402
 ## Version: @project-version@
 ## Title: Actionbar|cff1784d1Plus|r-M6 WOTLK
 ## Notes: This add-on enables |cff1784d1M6|r for Actionbar|cff1784d1Plus|r
