@@ -1,4 +1,4 @@
-## Interface: 11404
+## Interface: 11500
 ## Version: @project-version@
 ## Title: Actionbar|cff1784d1Plus|r-M6 Classic
 ## Notes: This add-on enables |cff1784d1M6|r for Actionbar|cff1784d1Plus|r
