@@ -5,7 +5,7 @@
 # ActionbarPlus-M6
 > A [World of Warcraft](https://worldofwarcraft.com/) AddOn
 
-[Releases](../../releases) | [Milestones](../../milestones) | [Known Issues](../../issues)
+[Releases](../../releases) | [Milestones](../../milestones) | [Known Issues](../../issues) | [Curse Forge](https://legacy.curseforge.com/wow/addons/actionbarplus-m6/files)
 
 ## Description
 
