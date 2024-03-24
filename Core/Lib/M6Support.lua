@@ -8,7 +8,6 @@ local GC, AceEvent, String = O.GlobalConstants, O.AceLibrary.AceEvent, O.String
 local IsBlank, IsNotBlank, StartsWithIgnoreCase = String.IsBlank, String.IsNotBlank, String.StartsWithIgnoreCase
 local L = GC:GetAceLocale()
 
-local ABP_API_NAME = 'ActionbarPlus-ActionbarPlusAPI-1.0'
 local M6_DEFAULT_ICON = 10741611000
 local MISSING_ICON = 134400
 
@@ -23,15 +22,8 @@ local tooltipColors = {
     tertiary = WHITE_FONT_COLOR or tertiaryFallbackWhite
 }
 local c = K_Constants:NewConsoleHelper(tooltipColors)
-local ec = PURE_RED_COLOR or RED_FONT_COLOR or CreateColorFromHexString('ffFF1919')
-local grayc = COMMON_GRAY_COLOR or GRAY_FONT_COLOR or CreateColorFromHexString('ffA8A8A8')
-
 local SEPARATOR = c:T(' :: ')
 local MACRO_M6_FORMAT = SEPARATOR .. c:P('%s')
-
---- This will be populated later
---- @type ActionbarPlusAPI
-local ABPI
 
 --[[-----------------------------------------------------------------------------
 Temporary Localization
@@ -43,6 +35,7 @@ local INACTIVE_M6_MACRO = DIM_RED_FONT_COLOR:WrapTextInColorCode(L['Inactive M6 
 New Instance: M6Support
 -------------------------------------------------------------------------------]]
 --- @class M6Support : BaseObject_WithAceEvent
+--- @field api ActionbarPlusAPI
 local S = ns:NewObject('M6Support')
 local p = S:GetLogger()
 
@@ -61,16 +54,9 @@ Notes
 --[[-----------------------------------------------------------------------------
 Support Functions
 -------------------------------------------------------------------------------]]
-local function api() return ns.LibStubAce(ABP_API_NAME) end
-
----@param text string
-local function fatal(text) return ec:WrapTextInColorCode('<<FATAL>> ') .. text end
----@param text string
-local function err(text) return ec:WrapTextInColorCode('<<ERROR>> ') .. text end
-
 ---@param bw ButtonUIWidget
 local function GetHint(bw) return S:macroHintByMacroName(bw:GetMacroData().name) end
----@alias HintFn fun(bw:ButtonUIWidget, optionalHint: M6Support_MacroHint_Extended, ) | "function(bw, hint) print('hello') end"
+---@alias HintFn fun(hint: M6Support_MacroHint_Extended, ) | "function(hint) print('hello') end"
 ---@param bw ButtonUIWidget
 ---@param hintFn HintFn
 local function IfHint(bw, hintFn)
@@ -126,7 +112,7 @@ end
 local function InitializeM6Icons()
     --- Initially, the m6 icons set. The icons are identifiers to slotIDs
     --- Grab the slotID and retrieve the real icons
-    ABPI:UpdateM6Macros(function(bw)
+    S.api:UpdateM6Macros(function(bw)
         local d = bw:GetMacroData()
         local m6Icon = bw:GetIcon()
         local slotID = S:slotIDFromIcon(m6Icon)
@@ -160,7 +146,7 @@ end
 
 local function RemoveInactiveMacros()
     C_Timer.NewTicker(0.1, function()
-        ABPI:UpdateMacros(function(bw)
+        S.api:UpdateMacros(function(bw)
             local d = bw:GetMacroData()
             local n = d.name; if not n then return end
             local slotID = S:slotIDByMacroName(n); if not slotID then return end
@@ -210,7 +196,7 @@ local function ShowTooltip(w)
         return
     end
 
-    local item = ABPI:GetItemInfo(spellName)
+    local item = S.api:GetItemInfo(spellName)
     if item and item.id then
         GameTooltip:SetItemByID(item.id)
         AddM6Info(m, m6MacroName, hint)
@@ -230,6 +216,8 @@ M6 Support: Properties & Methods
 -------------------------------------------------------------------------------]]
 ---@param o M6Support
 local function PropertiesAndMethods(o)
+
+    local api = ns:ActionbarPlusAPI(); o.api = api
 
     --- @param macroName string The macro name i.e '_M6+s01'
     --- @return string The slotId, i.e. 's01' from '_M6+s01'
@@ -318,7 +306,7 @@ local function PropertiesAndMethods(o)
     --- @return string The slotID
     function o:slotIDFromIcon(icon) return M6:GetIconKey(icon) end
 
-    --- @return SpellInfo
+    --- @return SpellInfoM6
     function o:GetSpellInfo(spellNameOrId)
         local name, _, icon, castTime, minRange, maxRange, id = GetSpellInfo(spellNameOrId)
         return { name = name, id = id, icon = icon }
@@ -332,21 +320,21 @@ local function PropertiesAndMethods(o)
     function o:itemInfoByMacroName(bw)
         local n = bw:GetMacroName()
         local hint = S:macroHintByMacroName(n); if not hint then return end
-        return ABPI:GetItemInfo(hint.spell)
+        return api:GetItemInfo(hint.spell)
     end
 
     ---@param spellOrItemName string
     ---@return CooldownInfo
     function o:GetCooldownInfo(spellOrItemName)
 
-        local itemInfo = ABPI:GetItemInfo(spellOrItemName)
+        local itemInfo = api:GetItemInfo(spellOrItemName)
         if itemInfo then
-            return ABPI:GetItemCooldown(spellOrItemName)
+            return api:GetItemCooldown(spellOrItemName)
         end
 
         local spellInfo = self:GetSpellInfo(spellOrItemName)
         if spellInfo then
-            return ABPI:GetSpellCooldown(spellOrItemName)
+            return api:GetSpellCooldown(spellOrItemName)
         end
 
     end
@@ -386,8 +374,10 @@ Event Handler: Properties & Methods
 ---@param o M6_EventHandler
 local function EventHandlerPropertiesAndMethods(o)
 
+    local api = S.api
+
     function o.OnM6EditFrameHide()
-        ABPI:UpdateM6Macros(UpdateMacro)
+        api:UpdateM6Macros(UpdateMacro)
         RemoveInactiveMacros()
     end
 
@@ -447,10 +437,9 @@ local function EventHandlerPropertiesAndMethods(o)
 
     ---@param msg string
     ---@param source string
-    ---@param updateM6MacrosFn UpdateM6MacrosFn
     function o.OnSpellCastSucceeded(msg, source)
         p:log(30, 'MSG[%s]: %s', tostring(source), msg)
-        ABPI:UpdateM6Macros(UpdateMacro)
+        api:UpdateM6Macros(UpdateMacro)
     end
 
     --- ### Which events?
@@ -477,7 +466,7 @@ local function EventHandlerPropertiesAndMethods(o)
     --- Only triggers when energy/mana is not full
     ---@param msg string
     ---@param source string
-    function o.OnSpellUpdateUsable(msg, source) ABPI:UpdateM6Macros(UpdateMacro) end
+    function o.OnSpellUpdateUsable(msg, source) api:UpdateM6Macros(UpdateMacro) end
 
 end
 
@@ -486,17 +475,11 @@ EventHandlerPropertiesAndMethods(H)
 
 --[[-----------------------------------------------------------------------------
 Message Callbacks
+ABP_PLAYER_ENTERING_WORLD is triggered by ActionbarPlus
 -------------------------------------------------------------------------------]]
 AceEvent:RegisterMessage(GC.M.ABP_PLAYER_ENTERING_WORLD,function(msg, source, ...)
-    ABPI = api()
-    if not ABPI then
-        p:log(fatal 'Lib was not available: %s', ABP_API_NAME)
-        return
-    end
-
     S:InitializeHooks()
     S:RegisterCallbacks()
-end)
 
--- todo next: update item charges
--- todo next: update usable
+    ns:ReportOutOfDateIfConfigured()
+end)
