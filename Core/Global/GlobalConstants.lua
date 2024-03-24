@@ -16,17 +16,19 @@ local date = date
 --[[-----------------------------------------------------------------------------
 Local Vars
 -------------------------------------------------------------------------------]]
--- Use the bare namespace here since this is the very first file to be loaded
-local addon, ns = ...
+--- @type string
+local addon
+--- @type Kapresoft_Base_Namespace
+local kns; addon, kns = ...
 
 --- @type fun(o:any, ...) : void
-local pformat = ns.pformat
+local pformat = kns.Kapresoft_LibUtil.pformat
 
 --- @type Kapresoft_LibUtil
-local K = ns.Kapresoft_LibUtil
+local K = kns.Kapresoft_LibUtil
 local String = K.Objects.String
 local IsBlank, IsNotBlank, EqualsIgnoreCase = String.IsBlank, String.IsNotBlank, String.EqualsIgnoreCase
-
+local ec = PURE_RED_COLOR or RED_FONT_COLOR or CreateColorFromHexString('ffFF1919')
 --[[-----------------------------------------------------------------------------
 New Instance
 -------------------------------------------------------------------------------]]
@@ -94,10 +96,20 @@ local function GlobalConstantProperties(o)
         ABP_MacroAttributeSetter_OnShowTooltip  = newMsgABP('MacroAttributeSetter:OnShowTooltip'),
     }
 
+    ---@param text string
+    local function fatal(text) return ec:WrapTextInColorCode('<<FATAL>> ') .. text end
+    ---@param text string
+    local function fatalFormat(text) return ec:WrapTextInColorCode(text or '') end
+    ---@param text string
+    local function error(text) return ec:WrapTextInColorCode('<<ERROR>> ') .. text end
+
     o.C = C
     o.E = Events
     o.M = Messages
     o.newMsg = newMsg
+    o.fatal = fatal
+    o.fatalFormat = fatalFormat
+    o.error = error
 
 end
 
@@ -179,8 +191,8 @@ local function Init()
     GlobalConstantProperties(L)
     GlobalConstantMethods(L)
 
-    ns.O = ns.O or {}
-    ns.O.GlobalConstants = L
+    kns.O = kns.O or {}
+    kns.O.GlobalConstants = L
 end
 
 Init()

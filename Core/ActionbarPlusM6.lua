@@ -9,14 +9,7 @@ local _obj = ns:NewAddOn()
 local A = _obj
 local p = A:GetLogger()
 
-
-
 local eventHandler = O.EventHandler:NewEventHandler(A)
 eventHandler:RegisterEvents()
 
-local frame = CreateFrame("Frame", nil, UIParent)
-frame.ctx = { addon = A }
-
-frame:SetScript('OnEvent', OnPlayerEnteringWorld)
-frame:RegisterEvent('PLAYER_ENTERING_WORLD')
 

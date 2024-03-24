@@ -8,126 +8,88 @@ Interface files that need to be synced with ActionbarPlus codebase
 Interface:: ActionbarPlusAPI
 -------------------------------------------------------------------------------]]
 --- @class ActionbarPlusAPI
-local ActionbarPlusAPI = {}
---- @param o ActionbarPlusAPI
-local function ActionbarPlusAPI_Methods(o)
-
-    --- @param itemIDOrName number|string The itemID or itemName
-    --- @return ItemInfo
-    function o:GetItemInfo(itemIDOrName) end
-
-    --- @param itemIDOrName number|string The itemID or itemName
-    --- @return CooldownInfo
-    function o:GetItemCooldown(itemIDOrName)  end
-
-    --- @param spellNameOrID number|string Spell ID or Name. When passing a name requires the spell to be in your Spellbook.
-    --- @return CooldownInfo
-    function o:GetSpellCooldown(spellNameOrID) end
-
-    --- @param macroName string
-    --- @return boolean
-    function o:IsM6Macro(macroName) end
-
-    --- @param btnHandlerFn ButtonHandlerFunction
-    function o:UpdateMacros(btnHandlerFn) end
-
-    --- @param btnHandlerFn ButtonHandlerFunction
-    function o:UpdateM6Macros(btnHandlerFn) end
-
-    --- @param macroName string
-    --- @param btnHandlerFn ButtonHandlerFunction
-    function o:UpdateMacrosByName(macroName, btnHandlerFn) end
-
-    --- @param predicateFn ButtonPredicateFunction
-    --- @return table<number, ButtonUIWidget>
-    function o:FindMacros(predicateFn) end
-end
-ActionbarPlusAPI_Methods(ActionbarPlusAPI)
+--- @field GetVersion fun(self:ActionbarPlusAPI) : string
+--- @field GetLastUpdate fun(self:ActionbarPlusAPI) : string
+--- @field IsActionbarPlusM6OutOfDate fun(self:ActionbarPlusAPI) : boolean, string
+--- @field GetItemInfo fun(self:ActionbarPlusAPI, itemIDOrName:number|string):ItemInfo
+--- @field GetItemCooldown fun(self:ActionbarPlusAPI, itemIDOrName:number|string):CooldownInfo
+--- @field GetSpellCooldown fun(self:ActionbarPlusAPI, spellNameOrID:number|string):CooldownInfo
+--- @field GetSpell fun(self:ActionbarPlusAPI, spellNameOrID:number|string): SpellName, SpellID
+--- @field UpdateMacros fun(self:ActionbarPlusAPI, btnHandlerFn:ButtonHandlerFunction)
+--- @field UpdateM6Macros fun(self:ActionbarPlusAPI, btnHandlerFn:ButtonHandlerFunction)
+--- @field UpdateMacrosByName fun(self:ActionbarPlusAPI, macroName:string, btnHandlerFn:ButtonHandlerFunction)
+--- @field FindMacros fun(self:ActionbarPlusAPI, predicateFn:ButtonPredicateFunction):table<number, ButtonUIWidget>
+--- @field IsM6Macro fun(self:ActionbarPlusAPI, macroName:string):boolean
 
 --[[-----------------------------------------------------------------------------
-Interface:: ButtonUIWidget
+Interface: ButtonUIWidget
 -------------------------------------------------------------------------------]]
-
 --- @class ButtonUIWidget
-local ButtonUIWidget = {}
+--- @field GetSpellData fun(self:ButtonUIWidget):Profile_Spell
+--- @field GetItemData fun(self:ButtonUIWidget):Profile_Item
+--- @field GetMacroData fun(self:ButtonUIWidget):Profile_Macro
+--- @field GetMacroName fun(self:ButtonUIWidget):string
+--- @field GetName fun(self:ButtonUIWidget):string
+--- @field SetIcon fun(self:ButtonUIWidget, icon:Icon)
+--- @field UpdateItemStateByItem fun(self:ButtonUIWidget, itemIDOrName:number|string)
+--- @field UpdateItemStateByItemInfo fun(self:ButtonUIWidget, itemInfo:ItemInfo)
+--- @field SetActionUsable fun(self:ButtonUIWidget, isUsable:boolean)
+--- @field SetNameText fun(self:ButtonUIWidget, text:string)
+--- @field SetText fun(self:ButtonUIWidget, text:string)
+--- @field UpdateSpellCharges fun(self:ButtonUIWidget, spellName:SpellName)
+--- @field IsUsableItem fun(self:ButtonUIWidget, item:ItemID_Link_Or_Name):boolean
+--- @field IsStealthSpell fun(self:ButtonUIWidget):boolean
 
---- @param o ButtonUIWidget
-local function ButtonUIWidget_Methods(o)
-
-    --- @return Profile_Spell
-    function o:GetSpellData() end
-    --- @return Profile_Item
-    function o:GetItemData() end
-    --- @return Profile_Macro
-    function o:GetMacroData() end
-    --- @return string
-    function o:GetMacroName() end
-
-    --- @return string
-    function o:GetName() end
-    --- @param icon Icon
-    function o:SetIcon(icon) end
-
-    --- @param itemIDOrName number|string The itemID or itemName
-    function o:UpdateItemStateByItem(itemIDOrName) end
-    ---@param itemInfo ItemInfo
-    function o:UpdateItemStateByItemInfo(itemInfo) end
-
-    ---@param item ItemID_Link_Or_Name
-    function o:IsUsableItem(item) end
-
-    --- @param isUsable boolean
-    function o:SetActionUsable(isUsable) end
-
-    --- @param text string
-    function o:SetNameText(text) end
-
-    --- @param text string
-    function o:SetText(text) end
-
-    --- @param spellName SpellName
-    function o:UpdateSpellCharges(spellName) end
-
-end
-ButtonUIWidget_Methods(ButtonUIWidget)
-
+--[[-----------------------------------------------------------------------------
+Interface: Profile_Spell
+-------------------------------------------------------------------------------]]
 --- @class Profile_Spell
-local Profile_Spell = {
-    ["minRange"] = 0,
-    ["id"] = 8232,
-    ["label"] = "Windfury Weapon |c00747474(Rank 1)|r",
-    ["name"] = "Windfury Weapon",
-    ["castTime"] = 0,
-    ["link"] = "|cff71d5ff|Hspell:8232:0|h[Windfury Weapon]|h|r",
-    ["maxRange"] = 0,
-    ["icon"] = 136018,
-    ["rank"] = "Rank 1"
-}
---- @class Profile_Item
-local Profile_Item = {
-    ["name"] = "Arcane Powder",
-    ["link"] = "|cffffffff|Hitem:17020::::::::70:::::::::|h[Arcane Powder]|h|r",
-    ["id"] = 17020,
-    ["stackCount"] = 20,
-    ["icon"] = 133848,
-    ["count"] = 40,
-}
---- @class Profile_Macro
-local Profile_Macro = {
-    ["type"] = "macro",
-    ["index"] = 41,
-    ["name"] = "z#LOL",
-    ["icon"] = 132093,
-    -- This macro is used by third-party plugins
-    ["icon2"] = 132093,
-    ["body"] = "/lol\n",
-}
+--- @field minRange number The minimum range of the spell.
+--- @field id number The unique ID of the spell.
+--- @field label string The spell label, including name and rank, with color encoding. Example: "Windfury Weapon |c00747474(Rank 1)|r",
+--- @field name string The name of the spell. Example: "Windfury Weapon",
+--- @field castTime number The cast time of the spell.
+--- @field link string The hyperlink for the spell, with color encoding. Example: "|cff71d5ff|Hspell:8232:0|h[Windfury Weapon]|h|r"
+--- @field maxRange number The maximum range of the spell.
+--- @field icon number The icon ID of the spell.
+--- @field rank string The rank of the spell. Example: "Rank 1"
 
+--[[-----------------------------------------------------------------------------
+Interface: Profile_Item
+-------------------------------------------------------------------------------]]
+--- @class Profile_Item
+--- @field name string The name of the item.
+--- @field link string The hyperlink for the item, with color encoding.
+--- @field id number The unique ID of the item.
+--- @field stackCount number The maximum number of items that can stack in a single slot.
+--- @field icon number The icon ID of the item.
+--- @field count number The current count of the item in the player's possession.
+
+--[[-----------------------------------------------------------------------------
+Interface: Profile_Macro
+-------------------------------------------------------------------------------]]
+--- @class Profile_Macro
+--- @field type string The type of the profile element, in this case, "macro".
+--- @field index number The index of the macro in the macro UI.
+--- @field name string The name of the macro.
+--- @field icon number The primary icon ID of the macro.
+--- @field icon2 number An alternate icon ID, used by third-party plugins.
+--- @field body string The macro commands/body.
+
+--[[-----------------------------------------------------------------------------
+Interface: CooldownInfo
+-------------------------------------------------------------------------------]]
 --- @class CooldownInfo
-local CooldownInfo = {
-    start=nil,
-    duration=nil,
-    enabled=0,
-    name = 'spell or item',
-    isItem = false
-}
+--- @field start number|nil The start time of the cooldown. `nil` if the cooldown is not active.
+--- @field duration number|nil The duration of the cooldown. `nil` if the cooldown is not active.
+--- @field enabled number Indicates whether the cooldown is enabled (1) or not (0).
+--- @field name string The name of the spell or item on cooldown.
+--- @field isItem boolean Indicates whether the cooldown is for an item (`true`) or a spell (`false`).
+
+--[[-----------------------------------------------------------------------------
+Type: SpellInfoBasic
+-------------------------------------------------------------------------------]]
+--- @class SpellInfoBasic
+--- @field public id SpellID The spell ID
+--- @field public name SpellName The spell Name
+--- @field public icon Icon The icon ID
