@@ -18,8 +18,8 @@ if not L then return end
 Local Vars
 -------------------------------------------------------------------------------]]
 
-L['Addon Initialized Text Format V1']  = '%s Initialized.'
-L['Addon Initialized Text Format']     = '%s Initialized.  Type %s on the console for available commands.'
+L['Addon Initialized Text Format V1']  = '%s by |cffB0C2FBkapresoft|r is loaded.'
+L['Addon Initialized Text Format']     = '%s by kapresoft is loaded.  Type %s on the console for available commands.'
 L['Missing Spell or Item']             = true
 L['Inactive M6 Macro']                 = true
 L['Macro']                             = true
