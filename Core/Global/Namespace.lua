@@ -47,13 +47,12 @@ local function CreateNamespace(...)
 
         --- @return ActionbarPlusAPI
         function o:ActionbarPlusAPI()
-            local success, result = pcall(self.LibStubAce, ABP_API_NAME)
-            if success == false then
+            if not ABP_API then
                 local p = o:NewLogger()
-                p:log(GC.fatal( 'Library not found: %s. Error=%s'), ABP_API_NAME, result)
+                p:log(GC.fatal('The ActionbarPlus [APB_API] was not available.'))
                 return nil
             end
-            return result
+            return ABP_API
         end
 
         --- @param moduleName string The module name, i.e. Logger

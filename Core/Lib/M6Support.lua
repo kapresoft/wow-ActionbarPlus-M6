@@ -38,6 +38,7 @@ New Instance: M6Support
 --- @field api ActionbarPlusAPI
 local S = ns:NewObject('M6Support')
 local p = S:GetLogger()
+if not ns:ActionbarPlusAPI() then return end
 
 --[[-----------------------------------------------------------------------------
 Event Handler
