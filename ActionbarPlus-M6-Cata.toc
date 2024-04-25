@@ -1,6 +1,6 @@
-## Interface: 11502
+## Interface: 40400
 ## Version: @project-version@
-## Title: Actionbar|cff1784d1Plus-M6|r Classic Era
+## Title: Actionbar|cff1784d1Plus-M6|r Classic
 ## Notes: This add-on enables |cff1784d1M6|r for Actionbar|cff1784d1Plus|r
 ## Author: kapresoft@gmail.com
 ## SavedVariables: ABP_M6_DB, ABP_M6_LOG_LEVEL
@@ -33,4 +33,4 @@
 # /dump select(4, GetBuildInfo())
 
 Core\_Core.xml
-Vanilla\_ActionbarPlus-M6.xml
+Wrath\_ActionbarPlus-M6.xml

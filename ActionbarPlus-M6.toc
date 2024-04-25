@@ -1,6 +1,6 @@
 ## Interface: 100206
 ## Version: @project-version@
-## Title: Actionbar|cff1784d1Plus|r-M6 Retail
+## Title: Actionbar|cff1784d1Plus-M6|r
 ## Notes: This add-on enables |cff1784d1M6|r for Actionbar|cff1784d1Plus|r
 ## Author: kapresoft@gmail.com
 ## SavedVariables: ABP_M6_DB, ABP_M6_LOG_LEVEL
