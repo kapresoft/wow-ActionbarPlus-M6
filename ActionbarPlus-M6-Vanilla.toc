@@ -1,4 +1,4 @@
-## Interface: 11502
+## Interface: 11504
 ## Version: @project-version@
 ## Title: Actionbar|cff1784d1Plus-M6|r Classic Era
 ## Notes: This add-on enables |cff1784d1M6|r for Actionbar|cff1784d1Plus|r
