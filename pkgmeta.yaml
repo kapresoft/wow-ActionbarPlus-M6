@@ -3,6 +3,21 @@ package-as: ActionbarPlus-M6
 license-output: LICENSE.txt
 enable-nolib-creation: no
 
+required-dependencies:
+  - ActionbarPlus
+  - m6x
+
+embedded-libraries:
+  - LibStub
+  - Ace3
+
+tools-used:
+  - DevSuite
+  - DebugChatFrame
+  - Addon-Usage
+  - Bugsack
+  - Bug-Grabber
+
 externals:
   Core/ExtLib/Kapresoft-LibUtil:
     url: https://github.com/kapresoft/wow-lib-util
